@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="styles.css">
+  <title>SecurePYME - Escáner de Puertos</title>
+</head>
+<body>
+  <h1>SecurePYME - Escaneo de Seguridad</h1>
+
+  <label for="host">Introduce una dirección web:</label>
+  <input type="text" id="host" placeholder="scanme.nmap.org" />
+  <button onclick="escanear()">Escanear</button>
+
+  <h2>Resultados:</h2>
+  <pre id="resultados"></pre>
+
+  <script>
+    async function escanear() {
+      const host = document.getElementById("host").value;
+      const resultados = document.getElementById("resultados");
+      resultados.textContent = "Escaneando...";
+
+      try {
+        const res = await fetch(`http://127.0.0.1:8000/scan/?host=${host}`);
+        const data = await res.json();
+
+        if (data.error) {
+          resultados.textContent = "Error: " + data.error;
+        } else {
+          let salida = `Host: ${data.host}\n\nPuertos abiertos:\n`;
+          salida = `Host: ${data.host}\n\nPuertos encontrados:\n\n`;
+          data.ports.forEach(p => {
+            const estado = p.state === "open" ? "🟢 ABIERTO" : "🟠 FILTRADO";
+            salida += `→ ${p.port} (${p.service}) - ${estado}\n`;
+          });
+
+          resultados.textContent = salida;
+        }
+      } catch (err) {
+        resultados.textContent = "Error al conectar con el servidor: " + err;
+      }
+    }
+  </script>
+</body>
+</html>
