@@ -1,0 +1,57 @@
+
+✅ GUÍA PARA INICIALIZAR Y PROBAR EL PROYECTO SecurePYME
+
+1. Abrir la terminal (PowerShell o CMD)
+
+2. Ubicarse en la carpeta del backend:
+   cd C:\Users\34672\securepyme\backend
+
+3. (Solo si usas PowerShell) Permitir la ejecución de scripts:
+   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+
+4. Activar el entorno virtual:
+   .\venv\Scripts\Activate.ps1
+
+   (Deberías ver (venv) al inicio de la línea de comandos)
+
+5. Ejecutar el servidor de la API:
+   uvicorn main:app --reload
+
+   (El servidor correrá en http://127.0.0.1:8000)
+
+6. Comprobar el servidor:
+   Abrir en el navegador: http://127.0.0.1:8000/docs
+   (Si ves la documentación, el backend está funcionando)
+
+7. Abrir el frontend:
+   - Ir a la carpeta frontend:
+     C:\Users\34672\securepyme\frontend
+   - Abrir el archivo index.html
+     (Doble clic o usar Live Server si está instalado)
+
+8. Usar la página:
+   - Escribir un dominio o IP (ej: scanme.nmap.org)
+   - Pulsar "Escanear"
+   - Ver resultados de puertos abiertos o filtrados
+
+📋 RESUMEN DE COMANDOS IMPORTANTES:
+
+- Cambiar a carpeta backend:
+  cd C:\Users\34672\securepyme\backend
+
+- Permitir ejecución de scripts (PowerShell):
+  Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+
+- Activar entorno virtual:
+  .\venv\Scripts\Activate.ps1
+
+- Ejecutar servidor FastAPI:
+  uvicorn main:app --reload
+
+- Acceder a documentación API:
+  http://127.0.0.1:8000/docs
+
+- Abrir interfaz web:
+  Doble clic en index.html o usar Live Server
+
+✅ ¡Listo! Así puedes levantar y probar SecurePYME en cualquier momento.

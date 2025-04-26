@@ -1,0 +1,126 @@
+[
+    {
+        "host": "sdg.com",
+        "fecha_hora": "2025-04-26 14:09:14",
+        "puertos": [
+            {
+                "puerto": "80/tcp",
+                "servicio": "http",
+                "estado": "open"
+            },
+            {
+                "puerto": "443/tcp",
+                "servicio": "https",
+                "estado": "open"
+            },
+            {
+                "puerto": "8080/tcp",
+                "servicio": "http-proxy",
+                "estado": "open"
+            },
+            {
+                "puerto": "8443/tcp",
+                "servicio": "https-alt",
+                "estado": "open"
+            },
+            {
+                "puerto": "Nmap",
+                "servicio": "1",
+                "estado": "done:"
+            }
+        ]
+    },
+    {
+        "host": "scanme.nmap.org",
+        "fecha_hora": "2025-04-26 14:09:39",
+        "puertos": [
+            {
+                "puerto": "22/tcp",
+                "servicio": "ssh",
+                "estado": "open"
+            },
+            {
+                "puerto": "80/tcp",
+                "servicio": "http",
+                "estado": "open"
+            },
+            {
+                "puerto": "139/tcp",
+                "servicio": "netbios-ssn",
+                "estado": "filtered"
+            },
+            {
+                "puerto": "445/tcp",
+                "servicio": "microsoft-ds",
+                "estado": "filtered"
+            },
+            {
+                "puerto": "Nmap",
+                "servicio": "1",
+                "estado": "done:"
+            }
+        ]
+    },
+    {
+        "host": "hola.com",
+        "fecha_hora": "2025-04-26 14:17:31",
+        "puertos": [
+            {
+                "puerto": "80/tcp",
+                "servicio": "http",
+                "estado": "open"
+            },
+            {
+                "puerto": "139/tcp",
+                "servicio": "netbios-ssn",
+                "estado": "filtered"
+            },
+            {
+                "puerto": "443/tcp",
+                "servicio": "https",
+                "estado": "open"
+            },
+            {
+                "puerto": "445/tcp",
+                "servicio": "microsoft-ds",
+                "estado": "filtered"
+            },
+            {
+                "puerto": "Nmap",
+                "servicio": "1",
+                "estado": "done:"
+            }
+        ]
+    },
+    {
+        "host": "hola.com",
+        "fecha_hora": "2025-04-26 14:17:37",
+        "puertos": [
+            {
+                "puerto": "80/tcp",
+                "servicio": "http",
+                "estado": "open"
+            },
+            {
+                "puerto": "139/tcp",
+                "servicio": "netbios-ssn",
+                "estado": "filtered"
+            },
+            {
+                "puerto": "443/tcp",
+                "servicio": "https",
+                "estado": "open"
+            },
+            {
+                "puerto": "445/tcp",
+                "servicio": "microsoft-ds",
+                "estado": "filtered"
+            },
+            {
+                "puerto": "Nmap",
+                "servicio": "1",
+                "estado": "done:"
+            }
+        ]
+    }
+]

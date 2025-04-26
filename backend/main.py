@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 import subprocess
-
+import json
+from datetime import datetime
+from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -39,6 +41,9 @@ def scan_host(host: str):
                         "service": parts[2]
                     })
 
+        # ✨ AQUÍ añadimos guardar el historial
+        guardar_en_historial(host, ports)
+
         return {
             "host": host,
             "ports": ports
@@ -47,4 +52,46 @@ def scan_host(host: str):
     except Exception as e:
         return {"error": str(e)}
 
+@app.get("/historial/")
+def obtener_historial(limite: Optional[int] = None):
+    try:
+        with open("historial.json", "r", encoding="utf-8") as f:
+            historial = json.load(f)
 
+        if limite is not None:
+            historial = historial[-limite:]  # Devolvemos solo los últimos 'limite' registros
+
+        return historial
+
+    except FileNotFoundError:
+        return {"mensaje": "No hay escaneos en el historial todavía."}
+    except Exception as e:
+        return {"error": str(e)}
+    
+def guardar_en_historial(host, puertos):
+    historial = []
+
+    try:
+        # Intentamos leer el historial actual
+        with open("historial.json", "r", encoding="utf-8") as f:
+            historial = json.load(f)
+    except FileNotFoundError:
+        # Si no existe el archivo, empezamos con una lista vacía
+        historial = []
+
+    # Creamos el nuevo registro
+    nuevo_registro = {
+        "host": host,
+        "fecha_hora": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "puertos": [
+            {"puerto": p["port"], "servicio": p["service"], "estado": p["state"]}
+            for p in puertos
+        ]
+    }
+
+    # Añadimos el nuevo escaneo al historial
+    historial.append(nuevo_registro)
+
+    # Guardamos de nuevo todo el historial
+    with open("historial.json", "w", encoding="utf-8") as f:
+        json.dump(historial, f, indent=4, ensure_ascii=False)

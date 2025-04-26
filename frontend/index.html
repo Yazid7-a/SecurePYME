@@ -2,23 +2,60 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <link rel="stylesheet" href="styles.css">
   <title>SecurePYME - Escáner de Puertos</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+
   <h1>SecurePYME - Escaneo de Seguridad</h1>
 
-  <label for="host">Introduce una dirección web:</label>
-  <input type="text" id="host" placeholder="scanme.nmap.org" />
-  <button onclick="escanear()">Escanear</button>
+  <div class="container">
+    <div style="display: flex; gap: 10px; flex-direction: column;">
+      <label for="host">Introduce una dirección web:</label>
+      <input type="text" id="host" placeholder="ej: scanme.nmap.org" />
+      <button onclick="escanear()">Escanear</button>
+      <button id="btn-historial" onclick="toggleHistorial()">Mostrar Historial</button>
+    </div>
 
-  <h2>Resultados:</h2>
-  <pre id="resultados"></pre>
+    <h2>Resultados del Escaneo:</h2>
+    <pre id="resultados"></pre>
+
+    <div id="historial-contenedor" style="display: none;">
+      <h2>Historial de Escaneos:</h2>
+    
+      <input type="text" id="busqueda" placeholder="Buscar por host o fecha..." onkeyup="filtrarHistorial()" style="margin-bottom: 10px; padding: 8px; width: 100%;">
+    
+      <table id="historial-table" border="1" style="width: 100%; text-align: center;">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Host</th>
+            <th>Fecha</th>
+            <th>Puertos</th>
+          </tr>
+        </thead>
+        <tbody id="historial-body">
+          <!-- Aquí se cargarán los escaneos -->
+        </tbody>
+      </table>
+    </div>    
+  </div>
 
   <script>
     async function escanear() {
-      const host = document.getElementById("host").value;
+      const host = document.getElementById("host").value.trim();
       const resultados = document.getElementById("resultados");
+
+      if (host === "") {
+        alert("Por favor, introduce una dirección web o IP antes de escanear.");
+        return;
+      }
+
+      if (!host.includes(".")) {
+        alert("Por favor, introduce una dirección web válida (ejemplo: example.com o scanme.nmap.org).");
+        return;
+      }
+
       resultados.textContent = "Escaneando...";
 
       try {
@@ -28,12 +65,16 @@
         if (data.error) {
           resultados.textContent = "Error: " + data.error;
         } else {
-          let salida = `Host: ${data.host}\n\nPuertos abiertos:\n`;
-          salida = `Host: ${data.host}\n\nPuertos encontrados:\n\n`;
-          data.ports.forEach(p => {
-            const estado = p.state === "open" ? "🟢 ABIERTO" : "🟠 FILTRADO";
-            salida += `→ ${p.port} (${p.service}) - ${estado}\n`;
-          });
+          let salida = `Host: ${data.host}\n\nPuertos encontrados:\n\n`;
+
+          if (!data.ports || data.ports.length === 0) {
+            salida += "⚠️ No se encontraron puertos abiertos o el host no respondió.";
+          } else {
+            data.ports.forEach(p => {
+              const estado = p.state === "open" ? "🟢 ABIERTO" : "🟠 FILTRADO";
+              salida += `→ ${p.port} (${p.service}) - ${estado}\n`;
+            });
+          }
 
           resultados.textContent = salida;
         }
@@ -41,6 +82,77 @@
         resultados.textContent = "Error al conectar con el servidor: " + err;
       }
     }
+
+    let historialVisible = false;
+
+    async function toggleHistorial() {
+      const historialContenedor = document.getElementById("historial-contenedor");
+      const boton = document.getElementById("btn-historial");
+
+      if (!historialVisible) {
+        await verHistorial();
+        historialContenedor.style.display = "block";
+        boton.textContent = "Ocultar Historial";
+        historialVisible = true;
+      } else {
+        historialContenedor.style.display = "none";
+        boton.textContent = "Mostrar Historial";
+        historialVisible = false;
+      }
+    }
+
+    async function verHistorial() {
+      const historialBody = document.getElementById("historial-body");
+      historialBody.innerHTML = ""; // Limpiamos la tabla primero
+
+      try {
+        const res = await fetch(`http://127.0.0.1:8000/historial/?limite=10`);
+        const data = await res.json();
+
+        if (data.length === 0) {
+          const row = `<tr><td colspan="4">No hay escaneos guardados todavía.</td></tr>`;
+          historialBody.innerHTML = row;
+          return;
+        }
+
+        data.forEach((item, index) => {
+          let puertos = "";
+          item.puertos.forEach(p => {
+            puertos += `${p.puerto} (${p.servicio}) - ${p.estado}<br>`;
+          });
+
+          const row = `
+            <tr>
+              <td>${index + 1}</td>
+              <td>${item.host}</td>
+              <td>${item.fecha_hora}</td>
+              <td>${puertos}</td>
+            </tr>
+          `;
+          historialBody.innerHTML += row;
+        });
+
+      } catch (err) {
+        historialBody.innerHTML = `<tr><td colspan="4">Error al cargar historial: ${err}</td></tr>`;
+      }
+    }
+
+      function filtrarHistorial() {
+      const input = document.getElementById("busqueda").value.toLowerCase();
+      const filas = document.querySelectorAll("#historial-body tr");
+
+      filas.forEach(fila => {
+        const host = fila.children[1]?.textContent.toLowerCase();
+        const fecha = fila.children[2]?.textContent.toLowerCase();
+
+        if (host.includes(input) || fecha.includes(input)) {
+          fila.style.display = "";
+        } else {
+          fila.style.display = "none";
+        }
+      });
+    }
   </script>
+
 </body>
 </html>
