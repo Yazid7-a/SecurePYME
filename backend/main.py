@@ -1,9 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 import subprocess
 import json
 from datetime import datetime
-from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
+from typing import Optional
+import os
 
 app = FastAPI()
 
@@ -15,6 +17,57 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+class Usuario(BaseModel):
+    username: str
+    password: str
+
+@app.post("/register/")
+def register(usuario: Usuario):
+    # Verificamos si el archivo existe
+    if not os.path.exists("usuarios.json"):
+        usuarios = []
+    else:
+        with open("usuarios.json", "r", encoding="utf-8") as f:
+            usuarios = json.load(f)
+
+    # Comprobamos si el usuario ya existe
+    for u in usuarios:
+        if u["username"] == usuario.username:
+            raise HTTPException(status_code=400, detail="El nombre de usuario ya está registrado.")
+
+    # Creamos nuevo usuario
+    nuevo_usuario = {
+        "username": usuario.username,
+        "password": usuario.password,
+        "registro_fecha": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+
+    usuarios.append(nuevo_usuario)
+
+    # Guardamos el nuevo usuario
+    with open("usuarios.json", "w", encoding="utf-8") as f:
+        json.dump(usuarios, f, indent=4, ensure_ascii=False)
+
+    return {"mensaje": "Usuario registrado correctamente."}
+
+@app.post("/login/")
+def login(usuario: Usuario):
+    # Comprobamos si existe el archivo usuarios.json
+    if not os.path.exists("usuarios.json"):
+        raise HTTPException(status_code=400, detail="No hay usuarios registrados aún.")
+
+    # Cargamos los usuarios registrados
+    with open("usuarios.json", "r", encoding="utf-8") as f:
+        usuarios = json.load(f)
+
+    # Buscamos si el usuario y contraseña coinciden
+    for u in usuarios:
+        if u["username"] == usuario.username and u["password"] == usuario.password:
+            return {"mensaje": "Login correcto."}
+
+    # Si no se encuentra coincidencia
+    raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos.")
 
 @app.get("/")
 def root():

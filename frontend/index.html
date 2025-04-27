@@ -10,6 +10,18 @@
   <h1>SecurePYME - Escaneo de Seguridad</h1>
 
   <div class="container">
+
+    <!-- Formulario de login -->
+    <div id="login-container" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+      <h2>Login de Usuario</h2>
+      <input type="text" id="login-username" placeholder="Nombre de usuario">
+      <input type="password" id="login-password" placeholder="Contraseña">
+      <button onclick="login()">Iniciar Sesión</button>
+      <button onclick="cerrarSesion()" style="display:none;" id="cerrar-sesion-btn">Cerrar Sesión</button>
+      <div id="mensaje-login"></div>
+    </div>
+
+    <!-- Formulario de escaneo -->
     <div style="display: flex; gap: 10px; flex-direction: column;">
       <label for="host">Introduce una dirección web:</label>
       <input type="text" id="host" placeholder="ej: scanme.nmap.org" />
@@ -20,6 +32,7 @@
     <h2>Resultados del Escaneo:</h2>
     <pre id="resultados"></pre>
 
+    <!-- Historial -->
     <div id="historial-contenedor" style="display: none;">
       <h2>Historial de Escaneos:</h2>
     
@@ -39,10 +52,71 @@
         </tbody>
       </table>
     </div>    
+
   </div>
 
   <script>
-    async function escanear() {
+    // --- Función de login
+    async function login() {
+      const username = document.getElementById("login-username").value.trim();
+      const password = document.getElementById("login-password").value.trim();
+      const mensajeLogin = document.getElementById("mensaje-login");
+
+      if (username === "" || password === "") {
+        alert("Por favor, completa todos los campos.");
+        return;
+      }
+
+      try {
+        const res = await fetch('http://127.0.0.1:8000/login/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ username, password })
+        });
+
+        if (res.ok) {
+          localStorage.setItem("usuario", username);
+          mensajeLogin.innerText = `✅ Bienvenido, ${username}`;
+          document.getElementById("cerrar-sesion-btn").style.display = "block";
+          document.getElementById("login-username").style.display = "none";
+          document.getElementById("login-password").style.display = "none";
+        } else {
+          const data = await res.json();
+          mensajeLogin.innerText = `❌ Error: ${data.detail}`;
+        }
+
+      } catch (err) {
+        mensajeLogin.innerText = "Error al conectar con el servidor.";
+      }
+    }
+
+    function cerrarSesion() {
+      localStorage.removeItem("usuario");
+      location.reload(); // Recargamos la página para limpiar todo
+    }
+
+    function comprobarSesion() {
+      const usuario = localStorage.getItem("usuario");
+      const mensajeLogin = document.getElementById("mensaje-login");
+
+      if (usuario) {
+        mensajeLogin.innerText = `✅ Bienvenido, ${usuario}`;
+        document.getElementById("cerrar-sesion-btn").style.display = "block";
+        document.getElementById("login-username").style.display = "none";
+        document.getElementById("login-password").style.display = "none";
+      }
+    }
+
+    // --- Función para escanear
+        async function escanear() {
+      const usuario = localStorage.getItem("usuario");
+      if (!usuario) {
+        alert("Debes iniciar sesión para escanear.");
+        return;
+      }
+
       const host = document.getElementById("host").value.trim();
       const resultados = document.getElementById("resultados");
 
@@ -83,6 +157,8 @@
       }
     }
 
+
+    // --- Función de historial
     let historialVisible = false;
 
     async function toggleHistorial() {
@@ -137,7 +213,7 @@
       }
     }
 
-      function filtrarHistorial() {
+    function filtrarHistorial() {
       const input = document.getElementById("busqueda").value.toLowerCase();
       const filas = document.querySelectorAll("#historial-body tr");
 
@@ -152,6 +228,9 @@
         }
       });
     }
+
+    // --- Comprobar sesión al cargar la página
+    comprobarSesion();
   </script>
 
 </body>

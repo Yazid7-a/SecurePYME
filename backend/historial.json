@@ -122,5 +122,26 @@
                 "estado": "done:"
             }
         ]
+    },
+    {
+        "host": "sgg.com",
+        "fecha_hora": "2025-04-27 14:15:53",
+        "puertos": [
+            {
+                "puerto": "80/tcp",
+                "servicio": "http",
+                "estado": "open"
+            },
+            {
+                "puerto": "443/tcp",
+                "servicio": "https",
+                "estado": "open"
+            },
+            {
+                "puerto": "Nmap",
+                "servicio": "1",
+                "estado": "done:"
+            }
+        ]
     }
 ]
