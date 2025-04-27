@@ -1,57 +1,117 @@
+✅ GUÍA ACTUALIZADA PARA INICIAR Y PROBAR EL PROYECTO SecurePYME (Abril 2025)
+🛠 PASOS PARA INICIAR EL PROYECTO DESDE CERO:
+Abrir una terminal (PowerShell o CMD).
 
-✅ GUÍA PARA INICIALIZAR Y PROBAR EL PROYECTO SecurePYME
+Ir a la carpeta raíz del proyecto (donde está .venv):
 
-1. Abrir la terminal (PowerShell o CMD)
+bash
+Copiar
+Editar
+cd C:\Users\34672\securepyme
+(Solo si usas PowerShell) Permitir la ejecución de scripts:
 
-2. Ubicarse en la carpeta del backend:
-   cd C:\Users\34672\securepyme\backend
+bash
+Copiar
+Editar
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+(Esto solo dura mientras la terminal está abierta, por seguridad)
 
-3. (Solo si usas PowerShell) Permitir la ejecución de scripts:
-   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+Activar el entorno virtual:
 
-4. Activar el entorno virtual:
-   .\venv\Scripts\Activate.ps1
+bash
+Copiar
+Editar
+.\.venv\Scripts\Activate.ps1
+✅ Deberías ver que la terminal cambia a algo como:
 
-   (Deberías ver (venv) al inicio de la línea de comandos)
+scss
+Copiar
+Editar
+(venv) PS C:\Users\34672\securepyme>
+Entrar en la carpeta del backend:
 
-5. Ejecutar el servidor de la API:
-   uvicorn main:app --reload
+bash
+Copiar
+Editar
+cd backend
+(Comprobación rápida) Asegúrate de que existen estos dos archivos dentro de backend:
 
-   (El servidor correrá en http://127.0.0.1:8000)
+usuarios.json
 
-6. Comprobar el servidor:
-   Abrir en el navegador: http://127.0.0.1:8000/docs
-   (Si ves la documentación, el backend está funcionando)
+historial.json
 
-7. Abrir el frontend:
-   - Ir a la carpeta frontend:
-     C:\Users\34672\securepyme\frontend
-   - Abrir el archivo index.html
-     (Doble clic o usar Live Server si está instalado)
+Si no existen, crea manualmente dos archivos vacíos con este contenido:
 
-8. Usar la página:
-   - Escribir un dominio o IP (ej: scanme.nmap.org)
-   - Pulsar "Escanear"
-   - Ver resultados de puertos abiertos o filtrados
+usuarios.json:
 
-📋 RESUMEN DE COMANDOS IMPORTANTES:
+json
+Copiar
+Editar
+[]
+historial.json:
 
-- Cambiar a carpeta backend:
-  cd C:\Users\34672\securepyme\backend
+json
+Copiar
+Editar
+[]
+✅ Esto evita errores de arranque del servidor.
 
-- Permitir ejecución de scripts (PowerShell):
-  Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+Levantar el servidor de la API:
 
-- Activar entorno virtual:
-  .\venv\Scripts\Activate.ps1
+bash
+Copiar
+Editar
+uvicorn main:app --reload
+✅ El servidor se levantará en:
 
-- Ejecutar servidor FastAPI:
-  uvicorn main:app --reload
+cpp
+Copiar
+Editar
+http://127.0.0.1:8000
+Comprobar que el servidor esté funcionando:
 
-- Acceder a documentación API:
-  http://127.0.0.1:8000/docs
+Abrir en navegador:
 
-- Abrir interfaz web:
-  Doble clic en index.html o usar Live Server
+arduino
+Copiar
+Editar
+http://127.0.0.1:8000/docs
+(Deberías ver la documentación Swagger interactiva)
 
-✅ ¡Listo! Así puedes levantar y probar SecurePYME en cualquier momento.
+🧩 PASOS PARA USAR EL FRONTEND (la web):
+Abrir la carpeta frontend:
+
+bash
+Copiar
+Editar
+cd C:\Users\34672\securepyme\frontend
+Abrir el archivo index.html:
+
+Doble clic en index.html para abrirlo en el navegador, o
+
+Mejor: abrirlo con Live Server en Visual Studio Code (así no hay problema de CORS).
+
+🧠 FUNCIONALIDADES DISPONIBLES EN LA WEB:
+Registrar un nuevo usuario (Crear Cuenta)
+
+Iniciar sesión (Login)
+
+Escanear dominios o IPs (solo estando logueado)
+
+Ver historial de escaneos
+
+Buscar por host o fecha en historial
+
+Cerrar sesión
+
+📋 RESUMEN DE COMANDOS RÁPIDOS
+
+Acción	Comando
+Ir a la raíz del proyecto	cd C:\Users\34672\securepyme
+Permitir ejecución de scripts (PowerShell)	Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+Activar entorno virtual	.\.venv\Scripts\Activate.ps1
+Cambiar a carpeta backend	cd backend
+Levantar servidor API	uvicorn main:app --reload
+Acceder a API	http://127.0.0.1:8000/docs
+Ir a carpeta frontend	cd C:\Users\34672\securepyme\frontend
+Abrir web	Doble clic en index.html o usar Live Server

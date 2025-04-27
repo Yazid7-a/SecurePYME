@@ -1,237 +1,101 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>SecurePYME - Escáner de Puertos</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
+<div id="auth-container" style="max-width: 400px; margin: auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); text-align: center; margin-bottom: 30px;">
+  
+  <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/Lock-icon.png" alt="Login Icon" width="50" style="margin-bottom: 20px;">
 
-  <h1>SecurePYME - Escaneo de Seguridad</h1>
+  <h2>Acceso a SecurePYME</h2>
 
-  <div class="container">
+  <!-- Login -->
+  <input type="text" id="login-username" placeholder="Nombre de usuario" style="width: 100%; margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+  <input type="password" id="login-password" placeholder="Contraseña" style="width: 100%; margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+  <button onclick="login()" style="width: 100%; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; margin-bottom: 10px;">Iniciar Sesión</button>
 
-    <!-- Formulario de login -->
-    <div id="login-container" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
-      <h2>Login de Usuario</h2>
-      <input type="text" id="login-username" placeholder="Nombre de usuario">
-      <input type="password" id="login-password" placeholder="Contraseña">
-      <button onclick="login()">Iniciar Sesión</button>
-      <button onclick="cerrarSesion()" style="display:none;" id="cerrar-sesion-btn">Cerrar Sesión</button>
-      <div id="mensaje-login"></div>
-    </div>
+  <hr style="margin: 20px 0;">
 
-    <!-- Formulario de escaneo -->
-    <div style="display: flex; gap: 10px; flex-direction: column;">
-      <label for="host">Introduce una dirección web:</label>
-      <input type="text" id="host" placeholder="ej: scanme.nmap.org" />
-      <button onclick="escanear()">Escanear</button>
-      <button id="btn-historial" onclick="toggleHistorial()">Mostrar Historial</button>
-    </div>
+  <!-- Registro -->
+  <input type="text" id="register-username" placeholder="Nuevo nombre de usuario" style="width: 100%; margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+  <input type="password" id="register-password" placeholder="Nueva contraseña" style="width: 100%; margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+  <button onclick="registrar()" style="width: 100%; padding: 10px; background-color: #28a745; color: white; border: none; border-radius: 5px; margin-bottom: 10px;">Crear Cuenta</button>
 
-    <h2>Resultados del Escaneo:</h2>
-    <pre id="resultados"></pre>
+  <!-- Cerrar sesión -->
+  <button onclick="cerrarSesion()" style="display:none; width: 100%; padding: 10px; background-color: #dc3545; color: white; border: none; border-radius: 5px; margin-top: 10px;" id="cerrar-sesion-btn">Cerrar Sesión</button>
 
-    <!-- Historial -->
-    <div id="historial-contenedor" style="display: none;">
-      <h2>Historial de Escaneos:</h2>
-    
-      <input type="text" id="busqueda" placeholder="Buscar por host o fecha..." onkeyup="filtrarHistorial()" style="margin-bottom: 10px; padding: 8px; width: 100%;">
-    
-      <table id="historial-table" border="1" style="width: 100%; text-align: center;">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Host</th>
-            <th>Fecha</th>
-            <th>Puertos</th>
-          </tr>
-        </thead>
-        <tbody id="historial-body">
-          <!-- Aquí se cargarán los escaneos -->
-        </tbody>
-      </table>
-    </div>    
+  <div id="mensaje-login" style="margin-top: 15px; font-weight: bold;"></div>
+</div>
 
-  </div>
+<!-- 💡 SCRIPT para login y registro AL FINAL -->
+<script>
+  async function login() {
+    const username = document.getElementById("login-username").value.trim();
+    const password = document.getElementById("login-password").value.trim();
+    const mensajeLogin = document.getElementById("mensaje-login");
 
-  <script>
-    // --- Función de login
-    async function login() {
-      const username = document.getElementById("login-username").value.trim();
-      const password = document.getElementById("login-password").value.trim();
-      const mensajeLogin = document.getElementById("mensaje-login");
-
-      if (username === "" || password === "") {
-        alert("Por favor, completa todos los campos.");
-        return;
-      }
-
-      try {
-        const res = await fetch('http://127.0.0.1:8000/login/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ username, password })
-        });
-
-        if (res.ok) {
-          localStorage.setItem("usuario", username);
-          mensajeLogin.innerText = `✅ Bienvenido, ${username}`;
-          document.getElementById("cerrar-sesion-btn").style.display = "block";
-          document.getElementById("login-username").style.display = "none";
-          document.getElementById("login-password").style.display = "none";
-        } else {
-          const data = await res.json();
-          mensajeLogin.innerText = `❌ Error: ${data.detail}`;
-        }
-
-      } catch (err) {
-        mensajeLogin.innerText = "Error al conectar con el servidor.";
-      }
+    if (username === "" || password === "") {
+      alert("Por favor, completa todos los campos.");
+      return;
     }
 
-    function cerrarSesion() {
-      localStorage.removeItem("usuario");
-      location.reload(); // Recargamos la página para limpiar todo
-    }
+    try {
+      const res = await fetch('http://127.0.0.1:8000/login/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
 
-    function comprobarSesion() {
-      const usuario = localStorage.getItem("usuario");
-      const mensajeLogin = document.getElementById("mensaje-login");
+      const data = await res.json();
 
-      if (usuario) {
-        mensajeLogin.innerText = `✅ Bienvenido, ${usuario}`;
+      if (res.ok) {
+        localStorage.setItem("usuario", username);
+        mensajeLogin.innerText = `✅ Bienvenido, ${username}`;
+        mensajeLogin.style.color = "green";
         document.getElementById("cerrar-sesion-btn").style.display = "block";
         document.getElementById("login-username").style.display = "none";
         document.getElementById("login-password").style.display = "none";
-      }
-    }
-
-    // --- Función para escanear
-        async function escanear() {
-      const usuario = localStorage.getItem("usuario");
-      if (!usuario) {
-        alert("Debes iniciar sesión para escanear.");
-        return;
-      }
-
-      const host = document.getElementById("host").value.trim();
-      const resultados = document.getElementById("resultados");
-
-      if (host === "") {
-        alert("Por favor, introduce una dirección web o IP antes de escanear.");
-        return;
-      }
-
-      if (!host.includes(".")) {
-        alert("Por favor, introduce una dirección web válida (ejemplo: example.com o scanme.nmap.org).");
-        return;
-      }
-
-      resultados.textContent = "Escaneando...";
-
-      try {
-        const res = await fetch(`http://127.0.0.1:8000/scan/?host=${host}`);
-        const data = await res.json();
-
-        if (data.error) {
-          resultados.textContent = "Error: " + data.error;
-        } else {
-          let salida = `Host: ${data.host}\n\nPuertos encontrados:\n\n`;
-
-          if (!data.ports || data.ports.length === 0) {
-            salida += "⚠️ No se encontraron puertos abiertos o el host no respondió.";
-          } else {
-            data.ports.forEach(p => {
-              const estado = p.state === "open" ? "🟢 ABIERTO" : "🟠 FILTRADO";
-              salida += `→ ${p.port} (${p.service}) - ${estado}\n`;
-            });
-          }
-
-          resultados.textContent = salida;
-        }
-      } catch (err) {
-        resultados.textContent = "Error al conectar con el servidor: " + err;
-      }
-    }
-
-
-    // --- Función de historial
-    let historialVisible = false;
-
-    async function toggleHistorial() {
-      const historialContenedor = document.getElementById("historial-contenedor");
-      const boton = document.getElementById("btn-historial");
-
-      if (!historialVisible) {
-        await verHistorial();
-        historialContenedor.style.display = "block";
-        boton.textContent = "Ocultar Historial";
-        historialVisible = true;
       } else {
-        historialContenedor.style.display = "none";
-        boton.textContent = "Mostrar Historial";
-        historialVisible = false;
+        mensajeLogin.innerText = `❌ Error: ${data.detail}`;
+        mensajeLogin.style.color = "red";
       }
+
+    } catch (err) {
+      mensajeLogin.innerText = "❌ Error al conectar con el servidor.";
+      mensajeLogin.style.color = "red";
+    }
+  }
+
+  async function registrar() {
+    const username = document.getElementById("register-username").value.trim();
+    const password = document.getElementById("register-password").value.trim();
+    const mensajeLogin = document.getElementById("mensaje-login");
+
+    if (username === "" || password === "") {
+      alert("Por favor, completa todos los campos de registro.");
+      return;
     }
 
-    async function verHistorial() {
-      const historialBody = document.getElementById("historial-body");
-      historialBody.innerHTML = ""; // Limpiamos la tabla primero
-
-      try {
-        const res = await fetch(`http://127.0.0.1:8000/historial/?limite=10`);
-        const data = await res.json();
-
-        if (data.length === 0) {
-          const row = `<tr><td colspan="4">No hay escaneos guardados todavía.</td></tr>`;
-          historialBody.innerHTML = row;
-          return;
-        }
-
-        data.forEach((item, index) => {
-          let puertos = "";
-          item.puertos.forEach(p => {
-            puertos += `${p.puerto} (${p.servicio}) - ${p.estado}<br>`;
-          });
-
-          const row = `
-            <tr>
-              <td>${index + 1}</td>
-              <td>${item.host}</td>
-              <td>${item.fecha_hora}</td>
-              <td>${puertos}</td>
-            </tr>
-          `;
-          historialBody.innerHTML += row;
-        });
-
-      } catch (err) {
-        historialBody.innerHTML = `<tr><td colspan="4">Error al cargar historial: ${err}</td></tr>`;
-      }
-    }
-
-    function filtrarHistorial() {
-      const input = document.getElementById("busqueda").value.toLowerCase();
-      const filas = document.querySelectorAll("#historial-body tr");
-
-      filas.forEach(fila => {
-        const host = fila.children[1]?.textContent.toLowerCase();
-        const fecha = fila.children[2]?.textContent.toLowerCase();
-
-        if (host.includes(input) || fecha.includes(input)) {
-          fila.style.display = "";
-        } else {
-          fila.style.display = "none";
-        }
+    try {
+      const res = await fetch('http://127.0.0.1:8000/register/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
       });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        mensajeLogin.innerText = `✅ Usuario registrado correctamente: ${username}`;
+        mensajeLogin.style.color = "green";
+      } else {
+        mensajeLogin.innerText = `❌ Error al registrar: ${data.detail}`;
+        mensajeLogin.style.color = "red";
+      }
+
+    } catch (err) {
+      mensajeLogin.innerText = "❌ Error al conectar con el servidor.";
+      mensajeLogin.style.color = "red";
     }
+  }
 
-    // --- Comprobar sesión al cargar la página
-    comprobarSesion();
-  </script>
-
-</body>
-</html>
+  function cerrarSesion() {
+    localStorage.removeItem("usuario");
+    location.reload(); // Recargamos la página para limpiar todo
+  }
+</script>

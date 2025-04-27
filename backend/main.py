@@ -6,6 +6,7 @@ from datetime import datetime
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 import os
+import bcrypt
 
 app = FastAPI()
 
@@ -39,7 +40,7 @@ def register(usuario: Usuario):
     # Creamos nuevo usuario
     nuevo_usuario = {
         "username": usuario.username,
-        "password": usuario.password,
+        "password": bcrypt.hashpw(usuario.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8'),
         "registro_fecha": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
 
@@ -63,7 +64,7 @@ def login(usuario: Usuario):
 
     # Buscamos si el usuario y contraseña coinciden
     for u in usuarios:
-        if u["username"] == usuario.username and u["password"] == usuario.password:
+        if u["username"] == usuario.username and bcrypt.checkpw(usuario.password.encode('utf-8'), u["password"].encode('utf-8')):
             return {"mensaje": "Login correcto."}
 
     # Si no se encuentra coincidencia

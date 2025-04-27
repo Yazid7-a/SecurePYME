@@ -22,6 +22,66 @@ h1 {
   max-width: 500px;
 }
 
+/* NUEVO: Contenedor auth (login + registro) */
+#auth-container {
+  max-width: 400px;
+  margin: auto;
+  padding: 20px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+#auth-container input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 8px;
+  margin-bottom: 16px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+#auth-container button {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-bottom: 10px;
+}
+
+/* Botones específicos */
+#auth-container button:nth-of-type(1) { /* Botón de Iniciar sesión */
+  background-color: #007bff;
+  color: white;
+}
+
+#auth-container button:nth-of-type(1):hover {
+  background-color: #0056b3;
+}
+
+#auth-container button:nth-of-type(3) { /* Botón de Crear cuenta */
+  background-color: #28a745;
+  color: white;
+}
+
+#auth-container button:nth-of-type(3):hover {
+  background-color: #218838;
+}
+
+#auth-container button:nth-of-type(4) { /* Botón de Cerrar sesión */
+  background-color: #dc3545;
+  color: white;
+}
+
+#auth-container button:nth-of-type(4):hover {
+  background-color: #c82333;
+}
+
 label {
   font-weight: bold;
 }
