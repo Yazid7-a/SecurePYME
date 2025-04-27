@@ -13,31 +13,35 @@ app = FastAPI()
 # Activar CORS para permitir conexiones desde el frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # puedes especificar "http://127.0.0.1:5500" si prefieres limitar
+    allow_origins=["*"],  # Puedes especificar "http://127.0.0.1:5500" si prefieres limitar
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Definición del modelo de datos para usuarios
 class Usuario(BaseModel):
     username: str
     password: str
 
+# --- ENDPOINTS ---
+
 @app.post("/register/")
 def register(usuario: Usuario):
-    # Verificamos si el archivo existe
-    if not os.path.exists("usuarios.json"):
-        usuarios = []
-    else:
+    usuarios = []
+
+    # Cargar usuarios existentes si el archivo existe
+    if os.path.exists("usuarios.json"):
         with open("usuarios.json", "r", encoding="utf-8") as f:
-            usuarios = json.load(f)
+            contenido = f.read().strip()
+            if contenido:
+                usuarios = json.loads(contenido)
 
-    # Comprobamos si el usuario ya existe
-    for u in usuarios:
-        if u["username"] == usuario.username:
-            raise HTTPException(status_code=400, detail="El nombre de usuario ya está registrado.")
+    # Comprobar si el usuario ya existe
+    if any(u["username"] == usuario.username for u in usuarios):
+        raise HTTPException(status_code=400, detail="El nombre de usuario ya está registrado.")
 
-    # Creamos nuevo usuario
+    # Crear el nuevo usuario cifrando la contraseña
     nuevo_usuario = {
         "username": usuario.username,
         "password": bcrypt.hashpw(usuario.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8'),
@@ -46,7 +50,7 @@ def register(usuario: Usuario):
 
     usuarios.append(nuevo_usuario)
 
-    # Guardamos el nuevo usuario
+    # Guardar el usuario actualizado
     with open("usuarios.json", "w", encoding="utf-8") as f:
         json.dump(usuarios, f, indent=4, ensure_ascii=False)
 
@@ -54,20 +58,20 @@ def register(usuario: Usuario):
 
 @app.post("/login/")
 def login(usuario: Usuario):
-    # Comprobamos si existe el archivo usuarios.json
     if not os.path.exists("usuarios.json"):
         raise HTTPException(status_code=400, detail="No hay usuarios registrados aún.")
 
-    # Cargamos los usuarios registrados
     with open("usuarios.json", "r", encoding="utf-8") as f:
-        usuarios = json.load(f)
+        contenido = f.read().strip()
+        if contenido:
+            usuarios = json.loads(contenido)
+        else:
+            usuarios = []
 
-    # Buscamos si el usuario y contraseña coinciden
     for u in usuarios:
         if u["username"] == usuario.username and bcrypt.checkpw(usuario.password.encode('utf-8'), u["password"].encode('utf-8')):
             return {"mensaje": "Login correcto."}
 
-    # Si no se encuentra coincidencia
     raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos.")
 
 @app.get("/")
@@ -95,7 +99,6 @@ def scan_host(host: str):
                         "service": parts[2]
                     })
 
-        # ✨ AQUÍ añadimos guardar el historial
         guardar_en_historial(host, ports)
 
         return {
@@ -103,37 +106,46 @@ def scan_host(host: str):
             "ports": ports
         }
 
+    except subprocess.TimeoutExpired:
+        raise HTTPException(status_code=408, detail="El escaneo tardó demasiado en responder.")
     except Exception as e:
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail=f"Error realizando el escaneo: {str(e)}")
 
 @app.get("/historial/")
 def obtener_historial(limite: Optional[int] = None):
     try:
+        if not os.path.exists("historial.json"):
+            return []
+
         with open("historial.json", "r", encoding="utf-8") as f:
-            historial = json.load(f)
+            contenido = f.read().strip()
+            if not contenido:
+                return []
+
+            historial = json.loads(contenido)
 
         if limite is not None:
-            historial = historial[-limite:]  # Devolvemos solo los últimos 'limite' registros
+            historial = historial[-limite:]
 
         return historial
 
-    except FileNotFoundError:
-        return {"mensaje": "No hay escaneos en el historial todavía."}
     except Exception as e:
-        return {"error": str(e)}
-    
+        raise HTTPException(status_code=500, detail=f"Error al obtener historial: {str(e)}")
+
+# --- FUNCIONES AUXILIARES ---
+
 def guardar_en_historial(host, puertos):
     historial = []
 
     try:
-        # Intentamos leer el historial actual
-        with open("historial.json", "r", encoding="utf-8") as f:
-            historial = json.load(f)
-    except FileNotFoundError:
-        # Si no existe el archivo, empezamos con una lista vacía
+        if os.path.exists("historial.json"):
+            with open("historial.json", "r", encoding="utf-8") as f:
+                contenido = f.read().strip()
+                if contenido:
+                    historial = json.loads(contenido)
+    except Exception:
         historial = []
 
-    # Creamos el nuevo registro
     nuevo_registro = {
         "host": host,
         "fecha_hora": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -143,9 +155,7 @@ def guardar_en_historial(host, puertos):
         ]
     }
 
-    # Añadimos el nuevo escaneo al historial
     historial.append(nuevo_registro)
 
-    # Guardamos de nuevo todo el historial
     with open("historial.json", "w", encoding="utf-8") as f:
         json.dump(historial, f, indent=4, ensure_ascii=False)
