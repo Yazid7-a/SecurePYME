@@ -106,12 +106,19 @@ Cerrar sesión
 
 📋 RESUMEN DE COMANDOS RÁPIDOS
 
-Acción	Comando
-Ir a la raíz del proyecto	cd C:\Users\34672\securepyme
-Permitir ejecución de scripts (PowerShell)	Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-Activar entorno virtual	.\.venv\Scripts\Activate.ps1
-Cambiar a carpeta backend	cd backend
-Levantar servidor API	uvicorn main:app --reload
-Acceder a API	http://127.0.0.1:8000/docs
-Ir a carpeta frontend	cd C:\Users\34672\securepyme\frontend
-Abrir web	Doble clic en index.html o usar Live Server
+📁 Ir a la raíz del proyecto
+cd C:\Users\34672\securepyme
+
+▶️ Activar entorno virtual
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\.venv\Scripts\Activate.ps1
+
+🚀 Levantar servidor FastAPI (desde la raíz)
+uvicorn backend.main:app --reload
+
+🌐 Acceder a API interactiva
+http://127.0.0.1:8000/docs
+
+🌍 Abrir interfaz web (desde carpeta frontend)
+cd frontend
+Doble clic en index.html o usar Live Server

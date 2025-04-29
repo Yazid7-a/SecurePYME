@@ -5,9 +5,9 @@ from typing import Optional
 from datetime import datetime
 import subprocess
 import re
-
+from fastapi.security import OAuth2PasswordRequestForm
+from backend.auth import crear_token_jwt
 from sqlmodel import Session
-
 from backend.database import get_session, crear_tablas
 from backend import crud
 from backend.models import Usuario
@@ -131,3 +131,19 @@ def obtener_historial(username: str, limite: Optional[int] = None, session: Sess
         }
         for e in escaneos
     ]
+
+@app.post("/token/")
+def login_con_token(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)):
+    from backend.crud import verificar_credenciales
+
+    username = form_data.username
+    password = form_data.password
+
+    if not verificar_credenciales(session, username, password):
+        raise HTTPException(status_code=401, detail="Credenciales incorrectas.")
+
+    token = crear_token_jwt({"sub": username})
+    return {
+        "access_token": token,
+        "token_type": "bearer"
+    }
