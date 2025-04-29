@@ -1,85 +1,92 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-import subprocess
-import json
-from datetime import datetime
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from typing import Optional
-import os
-import bcrypt
+from datetime import datetime
+import subprocess
+import re
+
+from sqlmodel import Session
+
+from backend.database import get_session, crear_tablas
+from backend import crud
+from backend.models import Usuario
 
 app = FastAPI()
 
-# Activar CORS para permitir conexiones desde el frontend
+# CORS para frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Puedes especificar "http://127.0.0.1:5500" si prefieres limitar
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Definición del modelo de datos para usuarios
-class Usuario(BaseModel):
+# Crear tablas al iniciar
+@app.on_event("startup")
+def on_startup():
+    crear_tablas()
+
+# ===========================
+# Validaciones
+# ===========================
+
+def es_host_valido(host: str) -> bool:
+    ip_pattern = r"^(\d{1,3}\.){3}\d{1,3}$"
+    domain_pattern = r"^(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z]{2,6})+$"
+    return bool(re.match(ip_pattern, host) or re.match(domain_pattern, host))
+
+def validar_usuario_password(username: str, password: str) -> None:
+    if not re.match(r"^[A-Za-z0-9_-]{4,}$", username):
+        raise HTTPException(status_code=400, detail="Usuario debe tener al menos 4 caracteres.")
+    if len(password) < 6 or not re.search(r"[A-Za-z]", password) or not re.search(r"[0-9]", password):
+        raise HTTPException(status_code=400, detail="Contraseña debe tener al menos 6 caracteres, una letra y un número.")
+
+# ===========================
+# Modelos Pydantic
+# ===========================
+
+class UsuarioInput(BaseModel):
     username: str
     password: str
 
-# --- ENDPOINTS ---
+class ScanResponse(BaseModel):
+    host: str
+    ports: list[dict]
+
+# ===========================
+# Endpoints
+# ===========================
 
 @app.post("/register/")
-def register(usuario: Usuario):
-    usuarios = []
-
-    # Cargar usuarios existentes si el archivo existe
-    if os.path.exists("usuarios.json"):
-        with open("usuarios.json", "r", encoding="utf-8") as f:
-            contenido = f.read().strip()
-            if contenido:
-                usuarios = json.loads(contenido)
-
-    # Comprobar si el usuario ya existe
-    if any(u["username"] == usuario.username for u in usuarios):
-        raise HTTPException(status_code=400, detail="El nombre de usuario ya está registrado.")
-
-    # Crear el nuevo usuario cifrando la contraseña
-    nuevo_usuario = {
-        "username": usuario.username,
-        "password": bcrypt.hashpw(usuario.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8'),
-        "registro_fecha": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    }
-
-    usuarios.append(nuevo_usuario)
-
-    # Guardar el usuario actualizado
-    with open("usuarios.json", "w", encoding="utf-8") as f:
-        json.dump(usuarios, f, indent=4, ensure_ascii=False)
-
+def register(usuario: UsuarioInput, session: Session = Depends(get_session)):
+    validar_usuario_password(usuario.username, usuario.password)
+    crud.crear_usuario(session, usuario.username, usuario.password)
     return {"mensaje": "Usuario registrado correctamente."}
 
 @app.post("/login/")
-def login(usuario: Usuario):
-    if not os.path.exists("usuarios.json"):
-        raise HTTPException(status_code=400, detail="No hay usuarios registrados aún.")
-
-    with open("usuarios.json", "r", encoding="utf-8") as f:
-        contenido = f.read().strip()
-        if contenido:
-            usuarios = json.loads(contenido)
-        else:
-            usuarios = []
-
-    for u in usuarios:
-        if u["username"] == usuario.username and bcrypt.checkpw(usuario.password.encode('utf-8'), u["password"].encode('utf-8')):
+def login(usuario: UsuarioInput, session: Session = Depends(get_session)):
+    try:
+        if crud.verificar_credenciales(session, usuario.username, usuario.password):
             return {"mensaje": "Login correcto."}
-
-    raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos.")
+        raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos.")
+    except HTTPException as e:
+        raise e
 
 @app.get("/")
 def root():
     return {"message": "API SecurePYME funcionando"}
 
-@app.get("/scan/")
-def scan_host(host: str):
+@app.get("/scan/", response_model=ScanResponse)
+def scan_host(host: str, username: str, session: Session = Depends(get_session)):
+    if not es_host_valido(host):
+        raise HTTPException(status_code=400, detail="Formato de host no válido.")
+
+    usuario = crud.obtener_usuario_por_username(session, username)
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado.")
+
     try:
         result = subprocess.run(["nmap", "-F", host], capture_output=True, text=True, timeout=10)
         lines = result.stdout.splitlines()
@@ -99,12 +106,10 @@ def scan_host(host: str):
                         "service": parts[2]
                     })
 
-        guardar_en_historial(host, ports)
+        puertos_str = [p["port"].split("/")[0] for p in ports]
+        crud.registrar_escaneo(session, host, puertos_str, usuario.id)
 
-        return {
-            "host": host,
-            "ports": ports
-        }
+        return {"host": host, "ports": ports}
 
     except subprocess.TimeoutExpired:
         raise HTTPException(status_code=408, detail="El escaneo tardó demasiado en responder.")
@@ -112,50 +117,17 @@ def scan_host(host: str):
         raise HTTPException(status_code=500, detail=f"Error realizando el escaneo: {str(e)}")
 
 @app.get("/historial/")
-def obtener_historial(limite: Optional[int] = None):
-    try:
-        if not os.path.exists("historial.json"):
-            return []
+def obtener_historial(username: str, limite: Optional[int] = None, session: Session = Depends(get_session)):
+    usuario = crud.obtener_usuario_por_username(session, username)
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado.")
 
-        with open("historial.json", "r", encoding="utf-8") as f:
-            contenido = f.read().strip()
-            if not contenido:
-                return []
-
-            historial = json.loads(contenido)
-
-        if limite is not None:
-            historial = historial[-limite:]
-
-        return historial
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al obtener historial: {str(e)}")
-
-# --- FUNCIONES AUXILIARES ---
-
-def guardar_en_historial(host, puertos):
-    historial = []
-
-    try:
-        if os.path.exists("historial.json"):
-            with open("historial.json", "r", encoding="utf-8") as f:
-                contenido = f.read().strip()
-                if contenido:
-                    historial = json.loads(contenido)
-    except Exception:
-        historial = []
-
-    nuevo_registro = {
-        "host": host,
-        "fecha_hora": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "puertos": [
-            {"puerto": p["port"], "servicio": p["service"], "estado": p["state"]}
-            for p in puertos
-        ]
-    }
-
-    historial.append(nuevo_registro)
-
-    with open("historial.json", "w", encoding="utf-8") as f:
-        json.dump(historial, f, indent=4, ensure_ascii=False)
+    escaneos = crud.obtener_historial(session, usuario.id, limite)
+    return [
+        {
+            "host": e.host,
+            "fecha": e.fecha,
+            "puertos": e.puertos_abiertos.split(",")
+        }
+        for e in escaneos
+    ]

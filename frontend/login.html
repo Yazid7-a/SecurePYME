@@ -2,30 +2,50 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>SecurePYME - Acceso</title>
-  <link rel="stylesheet" href="styles.css">
+  <title>SecurePYME - Iniciar Sesión / Registrarse</title>
+  <link rel="stylesheet" href="login.css">
+  <link rel="icon" type="image/png" href="logoSecurePYME.png">
 </head>
 <body>
 
-<div id="login-container">
-  <h1>SecurePYME</h1>
-  <h2>Acceso a tu cuenta</h2>
+<div class="container" id="container">
+  <!-- Formulario de Registro -->
+  <div class="form-container sign-up-container">
+    <form id="form-register">
+      <img src="logoSecurePYME.png" alt="Logo SecurePYME" class="logo" />
+      <h1>Crear Cuenta</h1>
+      <input type="text" id="register-username" placeholder="Nuevo nombre de usuario" required />
+      <input type="password" id="register-password" placeholder="Nueva contraseña" required />
+      <button type="submit">Registrarse</button>
+    </form>
+  </div>
 
-  <input type="text" id="login-username" placeholder="Nombre de usuario">
-  <input type="password" id="login-password" placeholder="Contraseña">
+    <!-- Formulario de Login -->
+    <div class="form-container sign-in-container">
+      <form id="form-login">
+        <img src="logoSecurePYME.png" alt="Logo SecurePYME" class="logo" />
+        <h1>Iniciar Sesión</h1>
+        <input type="text" id="login-username" placeholder="Nombre de usuario" required />
+        <input type="password" id="login-password" placeholder="Contraseña" required />
+        <button type="submit">Entrar</button>
+      </form>
+    </div>
 
-  <button onclick="login()" class="btn-login">Iniciar Sesión</button>
-
-  <hr style="margin: 20px 0; width: 100%;">
-
-  <h2>¿No tienes cuenta?</h2>
-
-  <input type="text" id="register-username" placeholder="Nuevo usuario">
-  <input type="password" id="register-password" placeholder="Nueva contraseña">
-
-  <button onclick="registrar()" class="btn-register">Crear Cuenta</button>
-
-  <div id="mensaje-login" style="margin-top: 15px; font-weight: bold;"></div>
+  <!-- Panel Deslizante -->
+  <div class="overlay-container">
+    <div class="overlay">
+      <div class="overlay-panel overlay-left">
+        <h1>¿Ya tienes cuenta?</h1>
+        <p>Inicia sesión para continuar</p>
+        <button class="ghost" id="signIn">Iniciar Sesión</button>
+      </div>
+      <div class="overlay-panel overlay-right">
+        <h1>¿Nuevo por aquí?</h1>
+        <p>Regístrate y empieza a proteger tu empresa</p>
+        <button class="ghost" id="signUp">Crear Cuenta</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script src="login.js"></script>

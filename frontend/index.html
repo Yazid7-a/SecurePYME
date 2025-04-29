@@ -4,13 +4,17 @@
   <meta charset="UTF-8">
   <title>SecurePYME - Dashboard</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/png" href="logoSecurePYME.png">
 </head>
 <body>
 
 <div id="dashboard">
   <!-- Sidebar (menú lateral) -->
   <aside id="sidebar">
-    <h2>SecurePYME</h2>
+    <div class="logo-container">
+      <img src="logoSecurePYME.png" alt="Logo SecurePYME" class="logo-sidebar">
+      <h2>SecurePYME</h2>
+    </div>
     <nav>
       <ul>
         <li><button onclick="mostrarVista('escanear')">Escanear</button></li>
@@ -21,13 +25,12 @@
     </nav>
   </aside>
 
-  <!-- Área principal donde se cargarán las vistas dinámicamente -->
+  <!-- Área principal -->
   <main id="main-content">
-    <!-- Aquí aparecerán "Escanear", "Historial" o "Perfil" -->
+    <!-- Aquí se carga el contenido dinámicamente -->
   </main>
 </div>
 
-<!-- Enlace a la lógica del dashboard -->
 <script src="app.js"></script>
 
 </body>

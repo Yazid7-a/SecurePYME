@@ -92,7 +92,9 @@ window.onload = () => {
     resultados.style.display = "none";
   
     try {
-      const res = await fetch(`http://127.0.0.1:8000/scan/?host=${host}`);
+      const usuario = localStorage.getItem("usuario");
+      const res = await fetch(`http://127.0.0.1:8000/scan/?host=${host}&username=${usuario}`);
+
       const data = await res.json();
   
       loader.style.display = "none";
@@ -125,7 +127,8 @@ window.onload = () => {
     historialBody.innerHTML = "";
   
     try {
-      const res = await fetch(`http://127.0.0.1:8000/historial/?limite=10`);
+      const usuario = localStorage.getItem("usuario");
+      const res = await fetch(`http://127.0.0.1:8000/historial/?username=${usuario}&limite=10`);
       const data = await res.json();
   
       if (!Array.isArray(data) || data.length === 0) {
@@ -134,17 +137,14 @@ window.onload = () => {
       }
   
       data.forEach((item, index) => {
-        let puertos = "";
-        item.puertos.forEach(p => {
-          const estado = p.estado === "open" ? "🛡️ ABIERTO" : "🟠 FILTRADO";
-          puertos += `${p.puerto} (${p.servicio}) - ${estado}<br>`;
-        });
+        // Cada puerto es un string como "22"
+        const puertos = item.puertos.map(p => `🛡️ ${p}`).join("<br>");
   
         const fila = `
           <tr>
             <td>${index + 1}</td>
             <td>${item.host}</td>
-            <td>${formatearFechaBonita(item.fecha_hora)}</td>
+            <td>${formatearFechaBonita(item.fecha)}</td>
             <td>${puertos}</td>
           </tr>
         `;
@@ -155,6 +155,7 @@ window.onload = () => {
       historialBody.innerHTML = `<tr><td colspan="4">Error al cargar historial: ${err}</td></tr>`;
     }
   }
+  
   
   // Función para formatear la fecha
   function formatearFechaBonita(fechaHora) {
