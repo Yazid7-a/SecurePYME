@@ -1,14 +1,4 @@
-# Entorno virtual
 .venv/
-
-# Archivos temporales de Python
 __pycache__/
 *.pyc
-
-# Archivos de usuario e historial
-usuarios.json
-historial.json
-
-# Archivos de sistema
-.DS_Store
-Thumbs.db
+securepyme.db

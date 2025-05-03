@@ -6,11 +6,13 @@ from datetime import datetime
 import subprocess
 import re
 from fastapi.security import OAuth2PasswordRequestForm
-from backend.auth import crear_token_jwt
 from sqlmodel import Session
+
 from backend.database import get_session, crear_tablas
 from backend import crud
-from backend.models import Usuario
+from backend.models import Usuario, Escaneo  # NEW: Añadido Escaneo
+from backend.auth import crear_token_jwt, get_current_user
+from backend.risk_engine import calculate_risk  # NEW: Importar el motor de riesgo
 
 app = FastAPI()
 
@@ -54,6 +56,8 @@ class UsuarioInput(BaseModel):
 class ScanResponse(BaseModel):
     host: str
     ports: list[dict]
+    risk_score: Optional[int] = None  # NEW: Campo para el puntaje de riesgo
+    findings: Optional[list] = None  # NEW: Campo para hallazgos de riesgo
 
 # ===========================
 # Endpoints
@@ -74,20 +78,37 @@ def login(usuario: UsuarioInput, session: Session = Depends(get_session)):
     except HTTPException as e:
         raise e
 
+@app.post("/token/")
+def login_con_token(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)):
+    from backend.crud import verificar_credenciales
+
+    username = form_data.username
+    password = form_data.password
+
+    if not verificar_credenciales(session, username, password):
+        raise HTTPException(status_code=401, detail="Credenciales incorrectas.")
+
+    token = crear_token_jwt({"sub": username})
+    return {
+        "access_token": token,
+        "token_type": "bearer"
+    }
+
 @app.get("/")
 def root():
     return {"message": "API SecurePYME funcionando"}
 
 @app.get("/scan/", response_model=ScanResponse)
-def scan_host(host: str, username: str, session: Session = Depends(get_session)):
+def scan_host(
+    host: str,
+    current_user: Usuario = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
     if not es_host_valido(host):
         raise HTTPException(status_code=400, detail="Formato de host no válido.")
 
-    usuario = crud.obtener_usuario_por_username(session, username)
-    if not usuario:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado.")
-
     try:
+        # Ejecutar nmap y procesar resultados (existente)
         result = subprocess.run(["nmap", "-F", host], capture_output=True, text=True, timeout=10)
         lines = result.stdout.splitlines()
 
@@ -106,10 +127,30 @@ def scan_host(host: str, username: str, session: Session = Depends(get_session))
                         "service": parts[2]
                     })
 
-        puertos_str = [p["port"].split("/")[0] for p in ports]
-        crud.registrar_escaneo(session, host, puertos_str, usuario.id)
+        puertos_numeros = [int(p["port"].split("/")[0]) for p in ports]  # NEW: Convertir a números
+        
+        # NEW: Calcular riesgo
+        risk_report = calculate_risk(
+            {"open_ports": puertos_numeros},
+            session
+        )
 
-        return {"host": host, "ports": ports}
+        # NEW: Registrar escaneo con datos de riesgo
+        escaneo = crud.registrar_escaneo(
+            session,
+            host,
+            ",".join(map(str, puertos_numeros)),
+            current_user.id,
+            risk_score=risk_report["score"],
+            findings=risk_report["findings"]
+        )
+
+        return {
+            "host": host,
+            "ports": ports,
+            "risk_score": risk_report["score"],  # NEW
+            "findings": risk_report["findings"]  # NEW
+        }
 
     except subprocess.TimeoutExpired:
         raise HTTPException(status_code=408, detail="El escaneo tardó demasiado en responder.")
@@ -117,33 +158,19 @@ def scan_host(host: str, username: str, session: Session = Depends(get_session))
         raise HTTPException(status_code=500, detail=f"Error realizando el escaneo: {str(e)}")
 
 @app.get("/historial/")
-def obtener_historial(username: str, limite: Optional[int] = None, session: Session = Depends(get_session)):
-    usuario = crud.obtener_usuario_por_username(session, username)
-    if not usuario:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado.")
-
-    escaneos = crud.obtener_historial(session, usuario.id, limite)
+def obtener_historial(
+    limite: Optional[int] = None,
+    current_user: Usuario = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    escaneos = crud.obtener_historial(session, current_user.id, limite)
     return [
         {
             "host": e.host,
             "fecha": e.fecha,
-            "puertos": e.puertos_abiertos.split(",")
+            "puertos": e.puertos_abiertos.split(","),
+            "risk_score": e.risk_score,  # NEW
+            "findings": e.get_findings()  # NEW: Usa el método del modelo
         }
         for e in escaneos
     ]
-
-@app.post("/token/")
-def login_con_token(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)):
-    from backend.crud import verificar_credenciales
-
-    username = form_data.username
-    password = form_data.password
-
-    if not verificar_credenciales(session, username, password):
-        raise HTTPException(status_code=401, detail="Credenciales incorrectas.")
-
-    token = crear_token_jwt({"sub": username})
-    return {
-        "access_token": token,
-        "token_type": "bearer"
-    }

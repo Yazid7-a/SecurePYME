@@ -51,7 +51,7 @@ formRegister.addEventListener('submit', async (e) => {
 });
 
 // ===========================
-// Login
+// Login con JWT
 // ===========================
 formLogin.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -59,31 +59,34 @@ formLogin.addEventListener('submit', async (e) => {
   const username = document.getElementById('login-username').value.trim();
   const password = document.getElementById('login-password').value.trim();
 
-  // Control de bloqueo por intentos fallidos (UX temporal en frontend)
+  // Control de bloqueo por intentos fallidos (UX)
   if (bloqueadoHasta && new Date() < bloqueadoHasta) {
     alert("🚫 Demasiados intentos fallidos. Espera para volver a intentarlo.");
     return;
   }
 
+  const formData = new URLSearchParams();
+  formData.append("username", username);
+  formData.append("password", password);
+
   try {
-    const res = await fetch('http://127.0.0.1:8000/login/', {
+    const res = await fetch('http://127.0.0.1:8000/token/', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: formData
     });
 
     const data = await res.json();
 
     if (res.ok) {
       localStorage.setItem('usuario', username);
+      localStorage.setItem('token', data.access_token);
       alert(`✅ Bienvenido ${username}`);
       window.location.href = "index.html";
     } else {
       if (res.status === 403) {
-        // Bloqueado desde backend
         alert(`⛔ ${data.detail}`);
       } else {
-        // Fallo normal de credenciales
         alert(`❌ Error: ${data.detail}`);
         manejarIntentoFallido();
       }
