@@ -10,9 +10,9 @@ from sqlmodel import Session
 
 from backend.database import get_session, crear_tablas
 from backend import crud
-from backend.models import Usuario, Escaneo  # NEW: Añadido Escaneo
+from backend.models import Usuario, Escaneo
 from backend.auth import crear_token_jwt, get_current_user
-from backend.risk_engine import calculate_risk  # NEW: Importar el motor de riesgo
+from backend.risk_engine import calculate_risk
 
 app = FastAPI()
 
@@ -33,7 +33,6 @@ def on_startup():
 # ===========================
 # Validaciones
 # ===========================
-
 def es_host_valido(host: str) -> bool:
     ip_pattern = r"^(\d{1,3}\.){3}\d{1,3}$"
     domain_pattern = r"^(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z]{2,6})+$"
@@ -48,7 +47,6 @@ def validar_usuario_password(username: str, password: str) -> None:
 # ===========================
 # Modelos Pydantic
 # ===========================
-
 class UsuarioInput(BaseModel):
     username: str
     password: str
@@ -56,13 +54,12 @@ class UsuarioInput(BaseModel):
 class ScanResponse(BaseModel):
     host: str
     ports: list[dict]
-    risk_score: Optional[int] = None  # NEW: Campo para el puntaje de riesgo
-    findings: Optional[list] = None  # NEW: Campo para hallazgos de riesgo
+    risk_score: Optional[int] = None
+    findings: Optional[list] = None
 
 # ===========================
 # Endpoints
 # ===========================
-
 @app.post("/register/")
 def register(usuario: UsuarioInput, session: Session = Depends(get_session)):
     validar_usuario_password(usuario.username, usuario.password)
@@ -71,24 +68,16 @@ def register(usuario: UsuarioInput, session: Session = Depends(get_session)):
 
 @app.post("/login/")
 def login(usuario: UsuarioInput, session: Session = Depends(get_session)):
-    try:
-        if crud.verificar_credenciales(session, usuario.username, usuario.password):
-            return {"mensaje": "Login correcto."}
-        raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos.")
-    except HTTPException as e:
-        raise e
+    if crud.verificar_credenciales(session, usuario.username, usuario.password):
+        return {"mensaje": "Login correcto."}
+    raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos.")
 
 @app.post("/token/")
 def login_con_token(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)):
-    from backend.crud import verificar_credenciales
-
-    username = form_data.username
-    password = form_data.password
-
-    if not verificar_credenciales(session, username, password):
+    if not crud.verificar_credenciales(session, form_data.username, form_data.password):
         raise HTTPException(status_code=401, detail="Credenciales incorrectas.")
 
-    token = crear_token_jwt({"sub": username})
+    token = crear_token_jwt({"sub": form_data.username})
     return {
         "access_token": token,
         "token_type": "bearer"
@@ -108,7 +97,6 @@ def scan_host(
         raise HTTPException(status_code=400, detail="Formato de host no válido.")
 
     try:
-        # Ejecutar nmap y procesar resultados (existente)
         result = subprocess.run(["nmap", "-F", host], capture_output=True, text=True, timeout=10)
         lines = result.stdout.splitlines()
 
@@ -120,23 +108,21 @@ def scan_host(
                 continue
             if parsing:
                 parts = line.split()
-                if len(parts) >= 3:
+                if len(parts) >= 3 and parts[0][0].isdigit():
                     ports.append({
                         "port": parts[0],
                         "state": parts[1],
                         "service": parts[2]
                     })
 
-        puertos_numeros = [int(p["port"].split("/")[0]) for p in ports]  # NEW: Convertir a números
+        puertos_numeros = [int(p["port"].split("/")[0]) for p in ports if p["port"].split("/")[0].isdigit()]
         
-        # NEW: Calcular riesgo
         risk_report = calculate_risk(
             {"open_ports": puertos_numeros},
             session
         )
 
-        # NEW: Registrar escaneo con datos de riesgo
-        escaneo = crud.registrar_escaneo(
+        crud.registrar_escaneo(
             session,
             host,
             ",".join(map(str, puertos_numeros)),
@@ -148,8 +134,8 @@ def scan_host(
         return {
             "host": host,
             "ports": ports,
-            "risk_score": risk_report["score"],  # NEW
-            "findings": risk_report["findings"]  # NEW
+            "risk_score": risk_report["score"],
+            "findings": risk_report["findings"]
         }
 
     except subprocess.TimeoutExpired:
@@ -169,8 +155,8 @@ def obtener_historial(
             "host": e.host,
             "fecha": e.fecha,
             "puertos": e.puertos_abiertos.split(","),
-            "risk_score": e.risk_score,  # NEW
-            "findings": e.get_findings()  # NEW: Usa el método del modelo
+            "risk_score": e.risk_score,
+            "findings": e.get_findings()
         }
         for e in escaneos
     ]

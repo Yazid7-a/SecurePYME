@@ -1,6 +1,6 @@
 from sqlmodel import Session
 from typing import Dict, List
-from .models import RiskRule, ScanResult  # Asegúrate de que ScanResult existe en models.py
+from .models import RiskRule
 
 # Datos predeterminados de reglas de riesgo (pueden cargarse desde la DB después)
 DEFAULT_RISK_RULES = {
