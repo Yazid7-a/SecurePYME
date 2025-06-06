@@ -1,140 +1,103 @@
-// Al cargar la página, comprobamos si hay sesión iniciada
 window.onload = () => {
   const token = localStorage.getItem("token");
   const usuario = localStorage.getItem("usuario");
 
   if (!token || !usuario) {
-    alert("Debes iniciar sesión.");
-    window.location.href = "login.html";
+    mostrarNotificacion("Debes iniciar sesión para acceder al sistema", "error");
+    setTimeout(() => window.location.href = "login.html", 2000);
   } else {
-    mostrarVista('escanear');
+    document.getElementById("username-display").textContent = usuario;
+    document.getElementById("profile-username").textContent = usuario;
+    document.getElementById("total-scans").textContent =
+      `${localStorage.getItem('total_scans') || '0'} realizados`;
+
+    actualizarEstadisticas();
+    mostrarVista("welcome");
+    initModalTabs();
   }
 };
 
-// Función para mostrar diferentes vistas dinámicamente
+// Función única para mostrar vistas
 function mostrarVista(vista) {
-  const main = document.getElementById('main-content');
-  main.classList.remove('fade-in');
-  void main.offsetWidth;
-  main.classList.add('fade-in');
+  // Ocultar todas las vistas
+  document.getElementById("welcome-message").style.display = "none";
+  document.getElementById("escanear-view").style.display = "none";
+  document.getElementById("historial-view").style.display = "none";
+  document.getElementById("perfil-view").style.display = "none";
 
-  if (vista === 'escanear') {
-    main.innerHTML = `
-      <section id="seccion-escanear" class="seccion">
-        <div class="scan-header">
-          <h2><i class="icon-scan"></i> Escaneo de Seguridad</h2>
-          <div class="scan-actions">
-            <button class="btn-help" onclick="mostrarAyuda()">
-              <i class="icon-help"></i> Ayuda
-            </button>
-          </div>
-        </div>
-        
-        <form id="form-escanear" class="scan-form">
-          <div class="input-group">
-            <input type="text" id="host" placeholder="ejemplo.com o 192.168.1.1" required>
-            <button type="submit" class="btn-scan">
-              <i class="icon-search"></i> Escanear
-            </button>
-          </div>
-        </form>
-
-        <div id="loader" class="loader-container">
-          <div class="loader-content">
-            <svg class="spinner" viewBox="0 0 50 50">
-              <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
-            </svg>
-            <p>Analizando seguridad...</p>
-          </div>
-        </div>
-
-        <div id="resultados-container" class="results-container">
-          <!-- Los resultados se cargarán dinámicamente -->
-        </div>
-      </section>
-    `;
-
-    document.getElementById('form-escanear').addEventListener('submit', function(e) {
-      e.preventDefault();
-      escanear();
-    });
-
-  } else if (vista === 'historial') {
-    main.innerHTML = `
-      <section id="seccion-historial" class="seccion">
-        <div class="history-header">
-          <h2><i class="icon-history"></i> Historial de Escaneos</h2>
-          <div class="history-actions">
-            <div class="search-box">
-              <i class="icon-search"></i>
-              <input type="text" id="busqueda" placeholder="Buscar por host o fecha..." onkeyup="filtrarHistorial()">
-            </div>
-          </div>
-        </div>
-        
-        <div class="history-container">
-          <table id="historial-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Host</th>
-                <th>Fecha</th>
-                <th>Puertos</th>
-                <th class="text-center">Nivel de Riesgo</th>
-                <th class="text-center">Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="historial-body"></tbody>
-          </table>
-        </div>
-      </section>
-    `;
-    verHistorial();
-  } else if (vista === 'perfil') {
-    const usuario = localStorage.getItem("usuario");
-    const lastScan = localStorage.getItem("last_scan_date") || "No disponible";
-    
-    main.innerHTML = `
-      <section id="seccion-perfil" class="seccion">
-        <h2><i class="icon-profile"></i> Mi Perfil</h2>
-        
-        <div class="profile-card">
-          <div class="profile-info">
-            <div class="info-item">
-              <span class="info-label">Usuario:</span>
-              <span class="info-value">${usuario}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Último escaneo:</span>
-              <span class="info-value">${lastScan}</span>
-            </div>
-          </div>
-          
-          <div class="profile-stats">
-            <div class="stat-card">
-              <div class="stat-value">${localStorage.getItem('total_scans') || '0'}</div>
-              <div class="stat-label">Escaneos realizados</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-value">${localStorage.getItem('avg_risk') || 'N/A'}</div>
-              <div class="stat-label">Riesgo promedio</div>
-            </div>
-          </div>
-        </div>
-        
-        <button class="btn-logout" onclick="cerrarSesion()">
-          <i class="icon-logout"></i> Cerrar sesión
-        </button>
-      </section>
-    `;
+  // Mostrar la vista seleccionada
+  if (vista === "welcome") {
+    document.getElementById("welcome-message").style.display = "block";
+  } else {
+    document.getElementById(`${vista}-view`).style.display = "block";
   }
+
+  // Actualizar botones activos en sidebar
+  document.querySelectorAll(".nav-btn").forEach(btn => {
+    btn.classList.remove("active");
+    if (btn.getAttribute("data-target") === vista) {
+      btn.classList.add("active");
+    }
+  });
+
+  // Actualizar título de página
+  const titulos = {
+    welcome: "Panel de Control",
+    escanear: "Escaneo de Seguridad",
+    historial: "Historial de Escaneos",
+    perfil: "Mi Perfil"
+  };
+  document.getElementById("page-title").textContent = titulos[vista] || "SecurePYME";
+
+  // Acciones específicas por vista
+  if (vista === "historial") verHistorial();
+  if (vista === "perfil") actualizarPerfil();
 }
 
-// Función de escaneo mejorada
+function actualizarPerfil() {
+  document.getElementById("perfil-usuario").textContent = localStorage.getItem("usuario") || "-";
+  document.getElementById("perfil-fecha").textContent = localStorage.getItem("last_scan_date") || "No disponible";
+  document.getElementById("perfil-total").textContent = localStorage.getItem("total_scans") || "0";
+  document.getElementById("perfil-promedio").textContent = `${localStorage.getItem("avg_risk") || "0"}/100`;
+}
+
+function mostrarAyuda() {
+  mostrarNotificacion("Ingrese un dominio o IP para comenzar el análisis de seguridad", "info");
+}
+
+function cerrarSesion() {
+  localStorage.clear();
+  mostrarNotificacion("Sesión cerrada correctamente", "success");
+  setTimeout(() => (window.location.href = "login.html"), 1500);
+}
+
+
+// Función para inicializar pestañas del modal
+function initModalTabs() {
+  document.querySelectorAll('.tab-btn').forEach(button => {
+    button.addEventListener('click', function() {
+      const tabId = this.getAttribute('data-tab');
+      
+      // Actualizar botones activos
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      this.classList.add('active');
+      
+      // Mostrar contenido correspondiente
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+      });
+      document.getElementById(`tab-${tabId}`).classList.add('active');
+    });
+  });
+}
+
+// Función de escaneo mejorada con animación de progreso
 async function escanear() {
   const host = document.getElementById("host").value.trim();
   const loader = document.getElementById("loader");
-  const resultadosContainer = document.getElementById("resultados-container");
+  const resultadosContainer = document.getElementById("resultados");
   const token = localStorage.getItem("token");
 
   if (!validarHost(host)) {
@@ -142,9 +105,29 @@ async function escanear() {
     return;
   }
 
-  // Mostrar loader
-  loader.style.display = "flex";
-  resultadosContainer.innerHTML = '';
+  // Mostrar loader con animación progresiva
+  loader.style.display = "block";
+  resultadosContainer.style.display = "none";
+  
+  // Simular progreso de escaneo
+  const progressBar = document.querySelector('.progress-bar');
+  const progressStages = [30, 60, 85, 100];
+  const stageMessages = [
+    "Escaneando puertos comunes",
+    "Analizando servicios detectados",
+    "Buscando vulnerabilidades conocidas",
+    "Generando informe de seguridad"
+  ];
+  
+  let currentStage = 0;
+  
+  const progressInterval = setInterval(() => {
+    if (currentStage < progressStages.length) {
+      progressBar.style.width = `${progressStages[currentStage]}%`;
+      document.querySelector('.scan-stats span:first-child').textContent = stageMessages[currentStage];
+      currentStage++;
+    }
+  }, 1500);
 
   try {
     const response = await fetch(`http://127.0.0.1:8000/scan/?host=${host}`, {
@@ -158,26 +141,24 @@ async function escanear() {
     }
 
     const data = await response.json();
+    clearInterval(progressInterval);
+    progressBar.style.width = "100%";
 
-    // Ocultar loader
-    loader.style.display = "none";
-
-    if (data.detail) {
-      mostrarNotificacion(data.detail, 'error');
-      return;
-    }
+    // Ocultar loader después de breve pausa
+    setTimeout(() => {
+      loader.style.display = "none";
+      mostrarResultadosEscaneo(data);
+    }, 500);
 
     // Actualizar última fecha de escaneo
     localStorage.setItem('last_scan_date', formatearFechaBonita(new Date()));
-    
-    // Mostrar resultados
-    mostrarResultadosEscaneo(data);
     
     // Guardar en historial local
     guardarEnHistorialLocal(data);
 
   } catch (error) {
     console.error("Error en el escaneo:", error);
+    clearInterval(progressInterval);
     loader.style.display = "none";
     mostrarNotificacion(`Error al conectar con el servidor: ${error.message}`, 'error');
   }
@@ -185,89 +166,188 @@ async function escanear() {
 
 // Función para mostrar los resultados del escaneo
 function mostrarResultadosEscaneo(data) {
-  const resultadosContainer = document.getElementById("resultados-container");
+  const resultadosContainer = document.getElementById("resultados");
+  resultadosContainer.style.display = "block";
   
+  // Determinar nivel de riesgo
+  const riskScore = data.risk_score || 0;
+  let riskLevel = "low";
+  let riskLabel = "Bajo Riesgo";
+  let riskDescription = "El sistema analizado presenta un buen nivel de seguridad";
+  
+  if (riskScore < 50) {
+    riskLevel = "high";
+    riskLabel = "Alto Riesgo";
+    riskDescription = "Se encontraron vulnerabilidades críticas que requieren atención inmediata";
+  } else if (riskScore < 80) {
+    riskLevel = "medium";
+    riskLabel = "Riesgo Moderado";
+    riskDescription = "Se recomiendan mejoras de seguridad para optimizar la protección";
+  }
+
   // Crear HTML para los resultados
   resultadosContainer.innerHTML = `
-    <div class="scan-summary">
-      <div class="summary-card">
-        <h3><i class="icon-info"></i> Resumen del Escaneo</h3>
-        <div class="summary-grid">
-          <div class="summary-item">
-            <span class="summary-label">Host:</span>
-            <span class="summary-value">${data.host}</span>
+    <div class="scan-results">
+      <div class="results-header">
+        <h3><i class="fas fa-file-contract"></i> Resultados del Escaneo</h3>
+        <div class="risk-badge ${riskLevel}">${riskLabel}</div>
+      </div>
+      
+      <div class="results-summary">
+        <div class="summary-item">
+          <i class="fas fa-server"></i>
+          <div>
+            <span>Host Analizado</span>
+            <strong>${data.host}</strong>
           </div>
-          <div class="summary-item">
-            <span class="summary-label">Fecha:</span>
-            <span class="summary-value">${formatearFechaBonita(new Date())}</span>
+        </div>
+        
+        <div class="summary-item">
+          <i class="fas fa-clock"></i>
+          <div>
+            <span>Tiempo de Escaneo</span>
+            <strong>${data.scan_duration || '45'} segundos</strong>
           </div>
-          <div class="summary-item">
-            <span class="summary-label">Puertos abiertos:</span>
-            <span class="summary-value">${data.ports ? data.ports.length : '0'}</span>
+        </div>
+        
+        <div class="summary-item">
+          <i class="fas fa-plug"></i>
+          <div>
+            <span>Puertos Abiertos</span>
+            <strong>${data.ports ? data.ports.length : '0'}</strong>
           </div>
         </div>
       </div>
       
-      <div class="risk-card">
-        <h3><i class="icon-shield"></i> Nivel de Seguridad</h3>
-        <div class="risk-score-container ${getRiskClass(data.risk_score)}">
-          <div class="risk-value">${data.risk_score || 'N/A'}<span>/100</span></div>
-          <div class="risk-description">${getRiskDescription(data.risk_score)}</div>
-          <div class="risk-meter">
-            <div class="risk-level" style="width: ${data.risk_score || 0}%"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <div class="results-section">
-      <div class="ports-section">
-        <h3><i class="icon-port"></i> Puertos Detectados</h3>
-        ${data.ports && data.ports.length > 0 ? 
-          `<ul class="ports-list">
-            ${data.ports.map(port => `
-              <li class="port-item ${port.state === 'open' ? 'open' : 'filtered'}">
-                <span class="port-number">${port.port}</span>
-                <span class="port-service">${port.service || 'Desconocido'}</span>
-                <span class="port-state">${port.state === 'open' ? 'Abierto' : 'Filtrado'}</span>
-              </li>
-            `).join('')}
-          </ul>` : 
-          '<p class="no-ports">No se encontraron puertos abiertos.</p>'}
-      </div>
-      
-      <div class="findings-section">
-        <h3><i class="icon-warning"></i> Hallazgos de Seguridad</h3>
-        ${data.findings && data.findings.length > 0 ? 
-          `<div class="findings-list">
-            ${data.findings.map(finding => `
-              <div class="finding-item ${finding.risk.toLowerCase()}">
-                <div class="finding-header">
-                  <span class="finding-title">Puerto ${finding.port} - ${finding.service}</span>
-                  <span class="finding-risk">${finding.risk}</span>
+      <div class="results-details">
+        <div class="details-section">
+          <h4><i class="fas fa-door-open"></i> Puertos Detectados</h4>
+          <div class="ports-grid">
+            ${data.ports && data.ports.length > 0 ? 
+              data.ports.map(port => `
+                <div class="port-card ${port.state}">
+                  <div class="port-number">${port.port}</div>
+                  <div class="port-info">
+                    <span class="port-service">${port.service || 'Servicio no identificado'}</span>
+                    <span class="port-protocol">${port.protocol}</span>
+                  </div>
+                  <div class="port-state">${port.state === 'open' ? 'Abierto' : 'Filtrado'}</div>
                 </div>
-                <div class="finding-content">
-                  <p class="finding-desc">${finding.description}</p>
-                  <div class="finding-recommendation">
-                    <strong>Recomendación:</strong> ${finding.recommendation}
+              `).join('') : 
+              '<div class="no-ports">No se encontraron puertos abiertos</div>'}
+          </div>
+        </div>
+        
+        <div class="details-section">
+          <h4><i class="fas fa-shield-alt"></i> Hallazgos de Seguridad</h4>
+          <div class="recommendations">
+            ${data.findings && data.findings.length > 0 ? 
+              data.findings.map(finding => `
+                <div class="recommendation ${finding.risk.toLowerCase()}">
+                  <div class="rec-header">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>${finding.title || 'Vulnerabilidad detectada'}</strong>
+                  </div>
+                  <p>${finding.description || 'Descripción no disponible'}</p>
+                  <div class="rec-actions">
+                    <span class="rec-priority">Prioridad: ${finding.risk || 'Alta'}</span>
+                    <p class="rec-solution"><strong>Solución:</strong> ${finding.recommendation || 'Sin recomendación específica'}</p>
                   </div>
                 </div>
-              </div>
-            `).join('')}
-          </div>` : 
-          '<p class="no-findings">No se encontraron vulnerabilidades críticas.</p>'}
+              `).join('') : 
+              '<div class="no-recs">No se requieren acciones críticas de seguridad</div>'}
+          </div>
+        </div>
+      </div>
+      
+      <div class="results-actions">
+        <button class="btn-export" onclick="exportarReporte(${JSON.stringify(data).replace(/"/g, '&quot;')})">
+          <i class="fas fa-file-download"></i> Exportar Reporte
+        </button>
+        <button class="btn-newscan" onclick="mostrarVista('escanear')">
+          <i class="fas fa-redo"></i> Nuevo Escaneo
+        </button>
       </div>
     </div>
-    
-    <div class="scan-actions">
-      <button class="btn-export" onclick="exportarReporte(${JSON.stringify(data).replace(/"/g, '&quot;')})">
-        <i class="icon-download"></i> Exportar Reporte
-      </button>
-      <button class="btn-newscan" onclick="mostrarVista('escanear')">
-        <i class="icon-scan"></i> Nuevo Escaneo
-      </button>
-    </div>
   `;
+}
+
+// Función para abrir el modal con resultados detallados
+function abrirModalResultados(scanData) {
+  const modal = document.getElementById('tech-modal');
+  modal.classList.add('active');
+  
+  // Llenar datos en el modal
+  document.getElementById('tech-host').textContent = scanData.host;
+  document.getElementById('tech-date').textContent = formatearFechaBonita(new Date());
+  document.getElementById('tech-score').textContent = scanData.risk_score || 'N/A';
+  document.getElementById('open-ports').textContent = scanData.ports ? scanData.ports.length : '0';
+  document.getElementById('vuln-count').textContent = scanData.findings ? scanData.findings.length : '0';
+  
+  // Actualizar barra de riesgo
+  const riskScore = scanData.risk_score || 0;
+  const riskBar = document.querySelector('.risk-level');
+  riskBar.className = 'risk-level ';
+  
+  if (riskScore >= 80) {
+    riskBar.classList.add('low');
+    document.querySelector('.risk-label').textContent = 'Bajo Riesgo';
+    document.querySelector('.risk-label').style.color = 'var(--secondary)';
+    document.querySelector('.risk-description').textContent = 'El sistema analizado presenta un buen nivel de seguridad';
+  } else if (riskScore >= 50) {
+    riskBar.classList.add('medium');
+    document.querySelector('.risk-label').textContent = 'Riesgo Moderado';
+    document.querySelector('.risk-label').style.color = 'var(--warning)';
+    document.querySelector('.risk-description').textContent = 'Se recomiendan mejoras de seguridad para optimizar la protección';
+  } else {
+    riskBar.classList.add('high');
+    document.querySelector('.risk-label').textContent = 'Alto Riesgo';
+    document.querySelector('.risk-label').style.color = 'var(--danger)';
+    document.querySelector('.risk-description').textContent = 'Se encontraron vulnerabilidades críticas que requieren atención inmediata';
+  }
+  
+  riskBar.style.width = `${riskScore}%`;
+  
+  // Actualizar pestaña de puertos
+  const portsContent = document.getElementById('tab-ports-content');
+  portsContent.innerHTML = scanData.ports && scanData.ports.length > 0 ? 
+    scanData.ports.map(port => `
+      <div class="port-detail">
+        <div class="port-header">
+          <span class="port-number">Puerto ${port.port}</span>
+          <span class="port-state ${port.state}">${port.state === 'open' ? 'Abierto' : 'Filtrado'}</span>
+        </div>
+        <div class="port-info">
+          <p><strong>Servicio:</strong> ${port.service || 'Desconocido'}</p>
+          <p><strong>Protocolo:</strong> ${port.protocol || 'TCP'}</p>
+          ${port.version ? `<p><strong>Versión:</strong> ${port.version}</p>` : ''}
+        </div>
+      </div>
+    `).join('') : 
+    '<p class="no-data">No se encontraron puertos abiertos</p>';
+  
+  // Actualizar pestaña de vulnerabilidades
+  const vulnContent = document.getElementById('tab-vuln-content');
+  vulnContent.innerHTML = scanData.findings && scanData.findings.length > 0 ? 
+    scanData.findings.map(finding => `
+      <div class="vuln-detail ${finding.risk.toLowerCase()}">
+        <div class="vuln-header">
+          <h4>${finding.title || 'Vulnerabilidad detectada'}</h4>
+          <span class="vuln-risk">${finding.risk}</span>
+        </div>
+        <div class="vuln-info">
+          <p><strong>Puerto:</strong> ${finding.port}</p>
+          <p><strong>Descripción:</strong> ${finding.description || 'Sin descripción disponible'}</p>
+          <p class="recommendation"><strong>Recomendación:</strong> ${finding.recommendation || 'Sin recomendación específica'}</p>
+        </div>
+      </div>
+    `).join('') : 
+    '<p class="no-data">No se encontraron vulnerabilidades críticas</p>';
+}
+
+// Función para cerrar el modal
+function cerrarModal() {
+  document.getElementById('tech-modal').classList.remove('active');
 }
 
 // Función para validar el host
@@ -300,17 +380,9 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
 
 // Función para obtener clase CSS según puntaje de riesgo
 function getRiskClass(score) {
-  if (score >= 80) return 'low-risk';
-  if (score >= 50) return 'medium-risk';
-  return 'high-risk';
-}
-
-// Función para obtener descripción del riesgo
-function getRiskDescription(score) {
-  if (!score) return 'No evaluado';
-  if (score >= 80) return 'Excelente nivel de seguridad';
-  if (score >= 50) return 'Riesgo moderado - Se recomiendan mejoras';
-  return 'Riesgo alto - Requiere atención inmediata';
+  if (score >= 80) return 'low';
+  if (score >= 50) return 'medium';
+  return 'high';
 }
 
 // Función para ver historial
@@ -345,7 +417,7 @@ async function verHistorial() {
       historialBody.innerHTML = `
         <tr>
           <td colspan="6" class="empty-row">
-            <i class="icon-info"></i>
+            <i class="fas fa-info-circle"></i>
             <span>No hay registros de escaneos</span>
           </td>
         </tr>
@@ -380,8 +452,8 @@ async function verHistorial() {
             </div>
           </td>
           <td class="text-center">
-            <button class="btn-action" onclick="verDetallesEscaneo('${item.id}')" title="Ver detalles">
-              <i class="icon-eye"></i>
+            <button class="btn-action" onclick="abrirModalResultados(${JSON.stringify(item).replace(/"/g, '&quot;')})" title="Ver detalles">
+              <i class="fas fa-eye"></i>
             </button>
           </td>
         </tr>
@@ -393,7 +465,7 @@ async function verHistorial() {
     historialBody.innerHTML = `
       <tr>
         <td colspan="6" class="error-row">
-          <i class="icon-error"></i>
+          <i class="fas fa-exclamation-triangle"></i>
           <span>Error al cargar el historial</span>
         </td>
       </tr>
@@ -404,6 +476,7 @@ async function verHistorial() {
 // Función para filtrar historial
 function filtrarHistorial() {
   const input = document.getElementById("busqueda").value.toLowerCase();
+  const filtro = document.getElementById("filtro-riesgo").value;
   const filas = document.querySelectorAll("#historial-body tr");
 
   filas.forEach(fila => {
@@ -413,10 +486,12 @@ function filtrarHistorial() {
 
     const host = fila.querySelector('.host-cell').textContent.toLowerCase();
     const fecha = fila.cells[2].textContent.toLowerCase();
-    const puertos = fila.querySelector('.ports-cell').textContent.toLowerCase();
-
-    const coincide = host.includes(input) || fecha.includes(input) || puertos.includes(input);
-    fila.style.display = coincide ? '' : 'none';
+    const riesgo = fila.querySelector('.risk-badge').classList[1];
+    
+    const coincideTexto = host.includes(input) || fecha.includes(input);
+    const coincideFiltro = filtro === 'all' || riesgo.includes(filtro);
+    
+    fila.style.display = (coincideTexto && coincideFiltro) ? '' : 'none';
   });
 }
 
@@ -443,14 +518,16 @@ function exportarReporte(scanData) {
   // Aquí iría la lógica real para generar PDF
   setTimeout(() => {
     mostrarNotificacion('Reporte generado correctamente', 'success');
+    
+    // Crear enlace de descarga simulado
+    const enlace = document.createElement('a');
+    enlace.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent('Informe de seguridad - ' + scanData.host);
+    enlace.download = `reporte-seguridad-${scanData.host}.txt`;
+    enlace.style.display = 'none';
+    document.body.appendChild(enlace);
+    enlace.click();
+    document.body.removeChild(enlace);
   }, 1500);
-}
-
-// Función para ver detalles de un escaneo histórico
-function verDetallesEscaneo(scanId) {
-  // Implementación para cargar detalles completos
-  console.log("Cargando detalles del escaneo:", scanId);
-  mostrarNotificacion(`Cargando detalles del escaneo ${scanId}...`, 'info');
 }
 
 // Función para guardar en historial local
@@ -467,7 +544,11 @@ function guardarEnHistorialLocal(scanData) {
     fecha: new Date().toISOString(),
     host: scanData.host,
     puertos: scanData.ports ? scanData.ports.map(p => p.port) : [],
-    risk_score: scanData.risk_score || 0
+    risk_score: scanData.risk_score || 0,
+    detalles: {
+      puertos_abiertos: scanData.ports ? scanData.ports.length : 0,
+      hallazgos: scanData.findings ? scanData.findings.length : 0
+    }
   };
   
   historial.unshift(nuevoEscaneo);
@@ -487,6 +568,13 @@ function actualizarEstadisticas() {
     const avgRisk = Math.round(historial.reduce((sum, scan) => sum + (scan.risk_score || 0), 0) / historial.length);
     localStorage.setItem('avg_risk', avgRisk);
   }
+  
+  // Actualizar UI si está en vista de perfil
+  if (document.getElementById('perfil-view')) {
+    document.querySelector('.stat-card .stat-value').textContent = historial.length;
+    document.querySelectorAll('.stat-card .stat-value')[1].textContent = 
+      localStorage.getItem('avg_risk') || '0';
+  }
 }
 
 // Función para mostrar ayuda
@@ -498,5 +586,6 @@ function mostrarAyuda() {
 function cerrarSesion() {
   localStorage.removeItem("usuario");
   localStorage.removeItem("token");
-  window.location.href = "login.html";
+  mostrarNotificacion("Sesión cerrada correctamente", "success");
+  setTimeout(() => window.location.href = "login.html", 1500);
 }

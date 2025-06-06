@@ -1,175 +1,343 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SecurePYME - Dashboard</title>
-  <link rel="stylesheet" href="styles.css">
-  <link rel="icon" type="image/png" href="logoSecurePYME.png">
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-  <style>
-    /* Estilos específicos para detalles técnicos */
-    .tech-detail {
-      background: white;
-      border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 15px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
-    .tech-detail h4 {
-      color: #2c3e50;
-      margin-bottom: 10px;
-      border-bottom: 1px solid #eee;
-      padding-bottom: 5px;
-    }
-    .port-info {
-      display: flex;
-      align-items: center;
-      margin-bottom: 5px;
-    }
-    .port-number {
-      font-family: monospace;
-      font-weight: bold;
-      width: 50px;
-    }
-    .risk-badge {
-      padding: 3px 8px;
-      border-radius: 12px;
-      font-size: 0.8rem;
-      font-weight: bold;
-      margin-left: 10px;
-    }
-    .risk-critical { background: #e74c3c; color: white; }
-    .risk-high { background: #f39c12; color: white; }
-    .risk-medium { background: #f1c40f; color: #333; }
-    .risk-low { background: #2ecc71; color: white; }
-    .recommendation {
-      background: #f8f9fa;
-      padding: 10px;
-      border-radius: 5px;
-      margin-top: 10px;
-      border-left: 3px solid #3498db;
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SecurePYME - Dashboard de Seguridad</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" type="image/png" href="logoSecurePYME.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 </head>
 <body>
-
 <div id="dashboard">
-  <!-- Sidebar (menú lateral) -->
   <aside id="sidebar">
     <div class="logo-container">
-      <img src="logoSecurePYME.png" alt="Logo SecurePYME" class="logo-sidebar">
+      <img src="logoSecurePYME.png" alt="Logo" class="logo-sidebar" />
       <h2>SecurePYME</h2>
       <div class="version-badge">v2.0</div>
     </div>
+    
+    <div class="user-profile">
+      <div class="avatar">
+        <i class="fas fa-user-shield"></i>
+      </div>
+      <div class="user-info">
+        <span id="username-display">Usuario</span>
+        <small>Administrador de seguridad</small>
+      </div>
+    </div>
+    
     <nav>
       <ul>
-        <li><button onclick="mostrarVista('escanear')"><i class="icon-scan"></i> Escanear</button></li>
-        <li><button onclick="mostrarVista('historial')"><i class="icon-history"></i> Historial</button></li>
-        <li><button onclick="mostrarVista('perfil')"><i class="icon-profile"></i> Perfil</button></li>
-        <li><button onclick="cerrarSesion()" class="btn-cerrar"><i class="icon-logout"></i> Cerrar Sesión</button></li>
+        <li>
+          <button class="nav-btn active" data-target="escanear" onclick="mostrarVista('escanear')">
+            <i class="fas fa-radar"></i> Escanear
+          </button>
+        </li>
+        <li>
+          <button class="nav-btn" data-target="historial" onclick="mostrarVista('historial')">
+            <i class="fas fa-history"></i> Historial
+          </button>
+        </li>
+        <li>
+          <button class="nav-btn" data-target="perfil" onclick="mostrarVista('perfil')">
+            <i class="fas fa-user-cog"></i> Perfil
+          </button>
+        </li>
+        <li class="divider"></li>
+        <li>
+          <button class="nav-btn btn-cerrar" onclick="cerrarSesion()">
+            <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+          </button>
+        </li>
       </ul>
     </nav>
-
+    
+    <div id="system-status">
+      <div class="status-item">
+        <i class="fas fa-shield-alt"></i>
+        <span>Sistema Activo</span>
+        <div class="status-indicator active"></div>
+      </div>
+      <div class="status-item">
+        <i class="fas fa-cloud"></i>
+        <span>Servidor Conectado</span>
+        <div class="status-indicator active"></div>
+      </div>
+    </div>
+    
     <div id="sidebar-footer">
-      <p class="footer-title">SecurePYME</p>
       <p class="footer-desc">Sistema de análisis de seguridad</p>
-      <p class="footer-copy">© 2024</p>
+      <p class="footer-copy">© 2024 SecurePYME</p>
     </div>
   </aside>
 
-  <!-- Área principal -->
   <main id="main-content">
-    <div class="welcome-message" id="welcome-message">
-      <h1>Bienvenido a SecurePYME</h1>
-      <p>Selecciona una opción del menú para comenzar</p>
-      <div class="quick-stats">
-        <div class="stat-card">
-          <i class="icon-shield"></i>
-          <h3>Protección</h3>
-          <p>en tiempo real</p>
-        </div>
-        <div class="stat-card">
-          <i class="icon-bug"></i>
-          <h3>Vulnerabilidades</h3>
-          <p>detectadas</p>
+    <header class="content-header">
+      <h1 id="page-title">Panel de Control</h1>
+      <div class="header-actions">
+        <button class="btn-help" onclick="mostrarAyuda()">
+          <i class="fas fa-question-circle"></i> Ayuda
+        </button>
+        <div class="notifications">
+          <i class="fas fa-bell"></i>
+          <span class="notification-badge">3</span>
         </div>
       </div>
+    </header>
+    
+    <div class="welcome-message" id="welcome-message">
+      <div class="welcome-content">
+        <h1>Bienvenido a SecurePYME</h1>
+        <p>Protege tu infraestructura digital con herramientas avanzadas de análisis de seguridad</p>
+        <div class="quick-stats">
+          <div class="stat-card">
+            <div class="stat-icon bg-blue">
+              <i class="fas fa-shield-alt"></i>
+            </div>
+            <div class="stat-info">
+              <h3>Protección</h3>
+              <p>en tiempo real</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon bg-red">
+              <i class="fas fa-bug"></i>
+            </div>
+            <div class="stat-info">
+              <h3>Vulnerabilidades</h3>
+              <p>detectadas</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon bg-green">
+              <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-info">
+              <h3>Escaneos</h3>
+              <p id="total-scans">0 realizados</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="welcome-graphic">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 300'%3E%3Cpath fill='%23007bff' fill-opacity='0.1' d='M200,50 Q300,100 350,200 L50,200 Q100,100 200,50 Z'/%3E%3Ccircle cx='200' cy='150' r='80' fill='none' stroke='%23007bff' stroke-width='2' stroke-dasharray='5,5'/%3E%3Ccircle cx='200' cy='150' r='40' fill='%23007bff' fill-opacity='0.2'/%3E%3C/svg%3E" alt="Security graphic">
+      </div>
     </div>
+    
+    <section id="escanear-view" class="view" style="display:none;">
+      <div class="section-header">
+        <h2><i class="fas fa-radar"></i> Escaneo de Seguridad</h2>
+        <p>Analiza dominios o direcciones IP para detectar vulnerabilidades</p>
+      </div>
+      
+      <form id="form-escanear" onsubmit="event.preventDefault(); escanear();">
+        <div class="input-group">
+          <div class="input-icon">
+            <i class="fas fa-globe-americas"></i>
+          </div>
+          <input type="text" id="host" placeholder="ejemplo.com o 192.168.1.1" required />
+          <button type="submit" class="btn-scan">
+            <i class="fas fa-search"></i> Escanear
+          </button>
+        </div>
+        <div class="input-hint">
+          <i class="fas fa-info-circle"></i> Ejemplos válidos: google.com, 8.8.8.8, tu-dominio.net
+        </div>
+      </form>
+
+      <div id="loader" style="display:none;">
+        <div class="spinner-container">
+          <div class="spinner">
+            <div class="spinner-circle"></div>
+          </div>
+          <p>Analizando seguridad...</p>
+          <div class="scan-progress">
+            <div class="progress-bar" style="width: 30%"></div>
+          </div>
+          <div class="scan-stats">
+            <span>Escaneando puertos</span>
+            <span>Identificando servicios</span>
+          </div>
+        </div>
+      </div>
+      
+      <div id="resultados" style="display:none;"></div>
+    </section>
+    
+    <section id="historial-view" class="view" style="display:none;">
+      <div class="section-header">
+        <h2><i class="fas fa-history"></i> Historial de Escaneos</h2>
+        <p>Registro de análisis de seguridad realizados</p>
+      </div>
+      
+      <div class="history-controls">
+        <div class="search-box">
+          <i class="fas fa-search"></i>
+          <input type="text" id="busqueda" placeholder="Buscar host o fecha..." onkeyup="filtrarHistorial()">
+        </div>
+        <div class="filter-box">
+          <i class="fas fa-filter"></i>
+          <select id="filtro-riesgo" onchange="filtrarHistorial()">
+            <option value="all">Todos</option>
+            <option value="high">Alto Riesgo</option>
+            <option value="medium">Medio Riesgo</option>
+            <option value="low">Bajo Riesgo</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="history-container">
+        <table id="historial-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Host</th>
+              <th>Fecha</th>
+              <th>Puertos</th>
+              <th>Riesgo</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="historial-body"></tbody>
+        </table>
+      </div>
+    </section>
+    
+    <section id="perfil-view" class="view" style="display:none;">
+      <div class="section-header">
+        <h2><i class="fas fa-user-circle"></i> Mi Perfil</h2>
+        <p>Administra tu cuenta y preferencias</p>
+      </div>
+      
+      <div class="profile-card">
+        <div class="profile-info">
+          <div class="info-group">
+            <label><i class="fas fa-user"></i> Usuario</label>
+            <div class="info-value" id="profile-username">Usuario</div>
+          </div>
+          
+          <div class="info-group">
+            <label><i class="fas fa-calendar"></i> Último escaneo</label>
+            <div class="info-value" id="last-scan-date">No disponible</div>
+          </div>
+        </div>
+        
+        <div class="profile-stats">
+          <div class="stat-card">
+            <div class="stat-value" id="total-scans-profile">0</div>
+            <div class="stat-label">Escaneos totales</div>
+          </div>
+          
+          <div class="stat-card">
+            <div class="stat-value" id="avg-risk-profile">0/100</div>
+            <div class="stat-label">Riesgo promedio</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="profile-actions">
+        <button class="btn-logout" onclick="cerrarSesion()">
+          <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+        </button>
+      </div>
+    </section>
   </main>
 </div>
 
-<!-- Modal para detalles técnicos - Versión Mejorada -->
+<!-- Modal de resultados -->
 <div id="tech-modal" class="modal">
   <div class="modal-content">
-    <span class="close-modal">&times;</span>
-    <h3 class="modal-title">Análisis Técnico Detallado</h3>
-    
-    <div class="modal-section">
-      <h4><i class="icon-scan"></i> Resumen del Escaneo</h4>
-      <div class="scan-summary">
-        <div class="summary-item">
-          <span class="summary-label">Host:</span>
-          <span id="tech-host" class="summary-value">example.com</span>
-        </div>
-        <div class="summary-item">
-          <span class="summary-label">Fecha:</span>
-          <span id="tech-date" class="summary-value">2024-03-15 14:30</span>
-        </div>
-        <div class="summary-item">
-          <span class="summary-label">Puntaje de Seguridad:</span>
-          <span id="tech-score" class="summary-value score-high">85/100</span>
-        </div>
-      </div>
+    <span class="close-modal" onclick="cerrarModal()">&times;</span>
+    <div class="modal-header">
+      <h3 class="modal-title"><i class="fas fa-file-medical-alt"></i> Informe de Seguridad</h3>
+      <div class="risk-badge critical">Riesgo Crítico</div>
     </div>
     
-    <div class="modal-section">
-      <h4><i class="icon-bug"></i> Puertos Detectados</h4>
-      <div id="ports-container" class="ports-list">
-        <!-- Los puertos se llenarán dinámicamente -->
-      </div>
+    <div class="modal-tabs">
+      <button class="tab-btn active" data-tab="summary">Resumen</button>
+      <button class="tab-btn" data-tab="ports">Puertos</button>
+      <button class="tab-btn" data-tab="findings">Hallazgos</button>
+      <button class="tab-btn" data-tab="recommendations">Recomendaciones</button>
     </div>
     
-    <div class="modal-section">
-      <h4><i class="icon-shield"></i> Recomendaciones</h4>
-      <div id="recommendations-container" class="recommendations-list">
-        <!-- Las recomendaciones se llenarán dinámicamente -->
+    <div class="modal-body">
+      <div class="tab-content active" id="tab-summary">
+        <div class="summary-grid">
+          <div class="summary-card">
+            <h4><i class="fas fa-info-circle"></i> Información del Host</h4>
+            <div class="summary-item">
+              <span>Host:</span>
+              <span id="tech-host">-</span>
+            </div>
+            <div class="summary-item">
+              <span>Fecha:</span>
+              <span id="tech-date">-</span>
+            </div>
+            <div class="summary-item">
+              <span>Duración:</span>
+              <span>45 segundos</span>
+            </div>
+          </div>
+          
+          <div class="summary-card">
+            <h4><i class="fas fa-chart-line"></i> Estadísticas</h4>
+            <div class="summary-item">
+              <span>Puertos escaneados:</span>
+              <span>1,024</span>
+            </div>
+            <div class="summary-item">
+              <span>Puertos abiertos:</span>
+              <span id="open-ports">-</span>
+            </div>
+            <div class="summary-item">
+              <span>Vulnerabilidades:</span>
+              <span id="vuln-count">-</span>
+            </div>
+          </div>
+          
+          <div class="summary-card risk-summary">
+            <h4><i class="fas fa-shield-alt"></i> Nivel de Seguridad</h4>
+            <div class="risk-meter">
+              <div class="risk-level high" style="width: 30%"></div>
+            </div>
+            <div class="risk-score">
+              <span id="tech-score">30</span>/100
+              <div class="risk-label">Alto Riesgo</div>
+            </div>
+            <div class="risk-description">
+              Se encontraron vulnerabilidades críticas que requieren atención inmediata
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="tab-content" id="tab-ports">
+        <div id="tab-ports-content"></div>
+      </div>
+      
+      <div class="tab-content" id="tab-findings">
+        <div id="tab-vuln-content"></div>
+      </div>
+      
+      <div class="tab-content" id="tab-recommendations">
+        <div id="tab-recs-content"></div>
       </div>
     </div>
     
     <div class="modal-actions">
-      <button id="export-pdf" class="btn-export"><i class="icon-download"></i> Exportar PDF</button>
-      <button id="close-tech" class="btn-close">Cerrar</button>
+      <button id="export-pdf" class="btn-export">
+        <i class="fas fa-file-pdf"></i> Exportar PDF
+      </button>
+      <button id="export-csv" class="btn-export">
+        <i class="fas fa-file-csv"></i> Exportar CSV
+      </button>
+      <button class="btn-close" onclick="cerrarModal()">Cerrar</button>
     </div>
   </div>
 </div>
 
 <script src="app.js"></script>
-
-<!-- Iconos inline para mejor rendimiento -->
-<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
-  <symbol id="icon-scan" viewBox="0 0 24 24">
-    <path d="M3 3h4v2H3V3m14 0h4v2h-4V3M3 19h4v2H3v-2m14 0h4v2h-4v-2M3 7h2v2H3V7m4 0h2v2H7V7m4 0h2v2h-2V7m4 0h2v2h-2V7m4 0h2v2h-2V7M3 11h2v2H3v-2m14 0h2v2h-2v-2M3 15h2v2H3v-2m14 0h2v2h-2v-2M7 19h2v2H7v-2m4 0h2v2h-2v-2m4 0h2v2h-2v-2"/>
-  </symbol>
-  <symbol id="icon-history" viewBox="0 0 24 24">
-    <path d="M11 8v5l4 2l.8-1.2l-3.2-1.8V8H11m1-6c5.5 0 10 4.5 10 10s-4.5 10-10 10S2 17.5 2 12S6.5 2 12 2m0 2c-4.4 0-8 3.6-8 8s3.6 8 8 8s8-3.6 8-8s-3.6-8-8-8z"/>
-  </symbol>
-  <symbol id="icon-profile" viewBox="0 0 24 24">
-    <path d="M12 4a4 4 0 0 1 4 4a4 4 0 0 1-4 4a4 4 0 0 1-4-4a4 4 0 0 1 4-4m0 10c4.4 0 8 2.7 8 5v1H4v-1c0-2.3 3.6-5 8-5z"/>
-  </symbol>
-  <symbol id="icon-logout" viewBox="0 0 24 24">
-    <path d="M16 17v-3H9v-4h7V7l5 5l-5 5M14 2a2 2 0 0 1 2 2v2h-2V4H5v16h9v-2h2v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9z"/>
-  </symbol>
-  <symbol id="icon-shield" viewBox="0 0 24 24">
-    <path d="M12 1L3 5v6c0 5.5 3.8 10.7 9 12c5.2-1.3 9-6.5 9-12V5l-9-4m0 10.9h5c-.5 2.9-2.4 5.5-5 6.3V12H7V6.3l5-2.1v9.7z"/>
-  </symbol>
-  <symbol id="icon-bug" viewBox="0 0 24 24">
-    <path d="M14 12h-4v-2h4v2m0 4h-4v-2h4v2m6-10v6c0 1.9-.3 3.7-1 5.4l1.5 1.5c.7-1.9 1.1-3.9 1.1-5.9V7l-1.6 1.6c-.9-1.5-2.2-2.7-3.8-3.6L15 3h-2v2.3c-.6.2-1.2.5-1.8.8L9.7 4.7L8.3 6.1l1.8 1.8C9.3 8.8 8.7 9.7 8.3 10.6L4.9 7.2L3.5 8.6l3.6 3.6c0 .6-.1 1.2-.1 1.8s.1 1.2.1 1.8l-3.6 3.6l1.4 1.4l3.4-3.4c.9.4 1.8 1 2.7 1.5l-1.8 1.8l1.4 1.4l1.8-1.8c.5.3 1 .5 1.6.7V21h2l.4-2.4c1.5-.9 2.8-2.1 3.8-3.6L22 17v-6l-2 2h-4.8c.4-.9.7-1.9.8-2.9L20 7z"/>
-  </symbol>
-  <symbol id="icon-download" viewBox="0 0 24 24">
-    <path d="M5 20h14v-2H5v2zm7-18L5.33 8.67l1.42 1.42L11 5.83v11.34l-4.25-4.26l-1.42 1.42L12 22l7.08-7.07l-1.42-1.42L13 17.17V5.83l4.25 4.26l1.42-1.42L12 2z"/>
-  </symbol>
-</svg>
-
 </body>
 </html>
